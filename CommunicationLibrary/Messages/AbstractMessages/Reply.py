@@ -6,6 +6,6 @@ class Reply(Message):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def __init__(self, success, messageId, conversationId):
+    def __init__(self, messageId, conversationId, success):
         super(Reply, self).__init__(messageId, conversationId)
         self.success = success
