@@ -1,5 +1,4 @@
 #!/usr/bin
-import numpy as np
 
 class ProcessInfo:
 
