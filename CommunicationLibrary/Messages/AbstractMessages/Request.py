@@ -1,6 +1,6 @@
 #!/usr/bin
 from abc import ABCMeta, abstractmethod
-from AbstractMessages.Message import Message
+from Message import Message
 
 class Request(Message):
     __metaclass__ = ABCMeta
