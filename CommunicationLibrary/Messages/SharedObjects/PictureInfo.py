@@ -1,5 +1,6 @@
 #!/usr/bin
 
+
 class PictureInfo:
 
     def __init__(self, picture, timeStamp, cameraId, clusterId):
