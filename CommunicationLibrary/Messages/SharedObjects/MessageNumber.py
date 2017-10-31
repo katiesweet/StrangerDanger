@@ -1,5 +1,5 @@
 #!/usr/bin/
-import numpy as np
+
 
 class MessageNumber:
     def __init__(self, processId, seqNumber):
