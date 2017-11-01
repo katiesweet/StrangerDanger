@@ -1,6 +1,6 @@
-#!/usr/bin
+#!/usr/bin/python
 from abc import ABCMeta, abstractmethod
-from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
+#from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 import cPickle as pickle
 
 

@@ -1,1 +1,13 @@
-__all__ = ["AliveRequest", "CalcStatisticsRequest", "CameraLoginRequest", "ClientLoginRequest", "LoginRequest", "RawQueryRequest", "RegisterRequest", "SaveMotionRequest", "ServerListRequest", "ServerLoginRequest", "StatisticsRequest", "SubscribeRequest", "SyncDataRequest"]
+from AliveRequest import *
+from CalcStatisticsRequest import *
+from CameraLoginRequest import *
+from ClientLoginRequest import *
+from LoginRequest import *
+from RawQueryRequest import *
+from RegisterRequest import *
+from SaveMotionRequest import *
+from ServerListRequest import *
+from ServerLoginRequest import *
+from StatisticsRequest import *
+from SubscribeRequest import *
+from SyncDataRequest import *
