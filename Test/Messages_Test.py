@@ -217,21 +217,91 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.process.label, 'Info about Process')
         self.assertEqual(decodedMsg.process.status, 'idle')
         self.assertEqual(decodedMsg.process.aliveTimeStamp, dateTime)
-    #
-    # def testRegisterReplyEncodingDecoding(self):
-    #     dateTime = datetime.now()
-    #     process = Process(2, 'Server', '127.0.0.3:3020', 'Statistics Server', 'busy', dateTime)
-    #     msg = RegisterReply(True, process)
-    #     processedMsg = msg.encode().decode()
-    #     self.assertEqual(msg, processedMsg)
-    #     process = processedMsg.process
-    #     self.assertEqual(processedMsg.success, True)
-    #     self.assertEqual(process.processId, 2)
-    #     self.assertEqual(process.type, 'Server')
-    #     self.assertEqual(process.endPoint, '127.0.0.3:3020')
-    #     self.assertEqual(process.label, 'Statistics Server')
-    #     self.assertEqual(process.status, 'busy')
-    #     self.assertEqual(process.aliveTimeStamp, dateTime)
+
+    def testServerListReplyEncodingDecoding(self):
+        servers = [
+            PublicEndPoint('127.0.0.3', '4000'),
+            PublicEndPoint('127.0.0.5', '4060'),
+        ]
+        msg = ServerListReply(True, servers)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+
+        self.assertIsNot(msg.servers, None)
+        self.assertEqual(msg.servers[0].host, '127.0.0.3')
+        self.assertEqual(msg.servers[0].port, '4000')
+        self.assertEqual(msg.servers[1].host, '127.0.0.5')
+        self.assertEqual(msg.servers[1].port, '4060')
+
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, ServerListReply))
+
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+        self.assertEqual(decodedMsg.success, True)
+
+        self.assertIsNot(decodedMsg.servers, None)
+        self.assertEqual(decodedMsg.servers[0].host, '127.0.0.3')
+        self.assertEqual(decodedMsg.servers[0].port, '4000')
+        self.assertEqual(decodedMsg.servers[1].host, '127.0.0.5')
+        self.assertEqual(decodedMsg.servers[1].port, '4060')
+
+    def testStatisticsReplyEncodingDecoding(self):
+        report = ActivityReport(5, 2)
+        msg = StatisticsReply(True, report)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+
+        self.assertIsNot(msg.report, None)
+        self.assertEqual(msg.report.weeklyMotionEvents, 5)
+        self.assertEqual(msg.report.dailyMotionEvents, 2)
+
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, StatisticsReply))
+
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+        self.assertEqual(decodedMsg.success, True)
+
+        self.assertIsNot(decodedMsg.report, None)
+        self.assertEqual(decodedMsg.report.weeklyMotionEvents, 5)
+        self.assertEqual(decodedMsg.report.dailyMotionEvents, 2)
+
+    def testSyncDataReplyEncodingDecoding(self):
+        msg = SyncDataReply(True)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, SyncDataReply))
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+        self.assertEqual(decodedMsg.success, True)
+
 
 if __name__ == '__main__':
     unittest.main()
