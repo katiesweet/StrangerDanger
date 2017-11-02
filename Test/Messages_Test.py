@@ -687,5 +687,56 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data[0].cameraId, 1)
         self.assertEqual(decodedMsg.data[0].clusterId, 2)
 
+    ########## SharedObjects ############
+    def testActivityReport(self):
+        report = ActivityReport(5, 2)
+        self.assertIsNot(report, None)
+        self.assertEqual(report.weeklyMotionEvents, 5)
+        self.assertEqual(report.dailyMotionEvents, 2)
+
+    def testDateRange(self):
+        timePeriod = DateRange(date(2017,10,31),date(2017,9,1))
+        self.assertIsNot(timePeriod, None)
+        self.assertEqual(timePeriod.startDate.year, 2017)
+        self.assertEqual(timePeriod.startDate.month, 10)
+        self.assertEqual(timePeriod.startDate.day, 31)
+        self.assertEqual(timePeriod.endDate.year, 2017)
+        self.assertEqual(timePeriod.endDate.month, 9)
+        self.assertEqual(timePeriod.endDate.day, 1)
+
+    def testMessageNumber(self):
+        messageNumber = MessageNumber(2, 5)
+        self.assertIsNot(messageNumber, None)
+        self.assertEqual(messageNumber.processId, 2)
+        self.assertEqual(messageNumber.seqNumber, 5)
+
+    def testPictureInfo(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        data = PictureInfo(picture, timeStamp, 1, 2)
+
+        self.assertIsNot(data, None)
+        self.assertTrue(np.array_equal(data.picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(data.timeStamp, timeStamp)
+        self.assertEqual(data.cameraId, 1)
+        self.assertEqual(data.clusterId, 2)
+
+    def testProcessInfo(self):
+        dateTime = datetime.now()
+        process = ProcessInfo(1, 'ClientProcess', '127.0.0.3:3200', 'Info about Process', 'idle', dateTime)
+        self.assertIsNot(process, None)
+        self.assertEqual(process.processId, 1)
+        self.assertEqual(process.processType, 'ClientProcess')
+        self.assertEqual(process.endPoint, '127.0.0.3:3200')
+        self.assertEqual(process.label, 'Info about Process')
+        self.assertEqual(process.status, 'idle')
+        self.assertEqual(process.aliveTimeStamp, dateTime)
+
+    def testPublicEndPoint(self):
+        endpoint = PublicEndPoint('127.0.0.3', '4000')
+        self.assertIsNot(endpoint, None)
+        self.assertEqual(endpoint.host, '127.0.0.3')
+        self.assertEqual(endpoint.port, '4000')
+
 if __name__ == '__main__':
     unittest.main()
