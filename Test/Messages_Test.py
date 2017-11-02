@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 import unittest
 import numpy as np
-from datetime import datetime
+from datetime import datetime, date
 from CommunicationLibrary.Messages.AbstractMessages import *
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
@@ -301,6 +301,105 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.conversationId, 2)
         self.assertEqual(decodedMsg.messageId, 3)
         self.assertEqual(decodedMsg.success, True)
+
+    ######### Request Messages #########
+    def testAliveRequestEncodingDecoding(self):
+        msg = AliveRequest()
+        self.assertIsNot(msg, None)
+        msg.initConversationIdMessageId(1,2)
+        self.assertEqual(msg.conversationId, 1)
+        self.assertEqual(msg.messageId, 2)
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, AliveRequest))
+        self.assertEqual(decodedMsg.conversationId, 1)
+        self.assertEqual(decodedMsg.messageId, 2)
+
+    def testCalcStatisticsRequestEncodingDecoding(self):
+        timePeriod = DateRange(date(2017,10,31),date(2017,9,1))
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        data = [
+            PictureInfo(picture, timeStamp, 4, 5)
+        ]
+
+        msg = CalcStatisticsRequest(timePeriod, 'Daily', data)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.timePeriod, timePeriod)
+        self.assertEqual(msg.statsType, 'Daily')
+
+        self.assertIsNot(msg.data, None)
+        self.assertTrue(np.array_equal(msg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.data[0].timeStamp, timeStamp)
+        self.assertEqual(msg.data[0].cameraId, 4)
+        self.assertEqual(msg.data[0].clusterId, 5)
+
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, CalcStatisticsRequest))
+
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+
+        self.assertEqual(decodedMsg.timePeriod.startDate.year, timePeriod.startDate.year)
+        self.assertEqual(decodedMsg.timePeriod.startDate.month, timePeriod.startDate.month)
+        self.assertEqual(decodedMsg.timePeriod.startDate.day, timePeriod.startDate.day)
+        self.assertEqual(decodedMsg.timePeriod.endDate.year, timePeriod.endDate.year)
+        self.assertEqual(decodedMsg.timePeriod.endDate.month, timePeriod.endDate.month)
+        self.assertEqual(decodedMsg.timePeriod.endDate.day, timePeriod.endDate.day)
+        self.assertEqual(decodedMsg.statsType, 'Daily')
+
+        self.assertIsNot(decodedMsg.data, None)
+        self.assertTrue(np.array_equal(decodedMsg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(decodedMsg.data[0].timeStamp, timeStamp)
+
+        self.assertEqual(decodedMsg.data[0].cameraId, 4)
+        self.assertEqual(decodedMsg.data[0].clusterId, 5)
+
+    def testCameraLoginRequestEncodingDecoding(self):
+        msg = CameraLoginRequest('CameraProcess','label','camMac','homeCam',15,'password123')
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.processType, 'CameraProcess')
+        self.assertEqual(msg.processLabel, 'label')
+        self.assertEqual(msg.identity, 'camMac')
+        self.assertEqual(msg.name, 'homeCam')
+        self.assertEqual(msg.clusterId, 15)
+        self.assertEqual(msg.clusterIdPassword, 'password123')
+
+        msg.initConversationIdMessageId(1,2)
+        self.assertEqual(msg.conversationId, 1)
+        self.assertEqual(msg.messageId, 2)
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, LoginRequest))
+        self.assertTrue(isinstance(decodedMsg, CameraLoginRequest))
+
+        self.assertEqual(decodedMsg.conversationId, 1)
+        self.assertEqual(decodedMsg.messageId, 2)
+
+        self.assertEqual(decodedMsg.processType, 'CameraProcess')
+        self.assertEqual(decodedMsg.processLabel, 'label')
+        self.assertEqual(decodedMsg.identity, 'camMac')
+        self.assertEqual(decodedMsg.name, 'homeCam')
+        self.assertEqual(decodedMsg.clusterId, 15)
+        self.assertEqual(decodedMsg.clusterIdPassword, 'password123')
+
 
 
 if __name__ == '__main__':
