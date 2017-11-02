@@ -551,6 +551,141 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.pictureInfo.cameraId, 1)
         self.assertEqual(decodedMsg.pictureInfo.clusterId, 2)
 
+    def testServerListRequestEncodingDecoding(self):
+        msg = ServerListRequest()
+        self.assertIsNot(msg, None)
+        msg.initConversationIdMessageId(1,2)
+        self.assertEqual(msg.conversationId, 1)
+        self.assertEqual(msg.messageId, 2)
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, ServerListRequest))
+        self.assertEqual(decodedMsg.conversationId, 1)
+        self.assertEqual(decodedMsg.messageId, 2)
+
+    def testServerLoginRequestEncodingDecoding(self):
+        msg = ServerLoginRequest('MainServer','label','someId')
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.processType, 'MainServer')
+        self.assertEqual(msg.processLabel, 'label')
+        self.assertEqual(msg.identity, 'someId')
+
+        msg.initConversationIdMessageId(1,2)
+        self.assertEqual(msg.conversationId, 1)
+        self.assertEqual(msg.messageId, 2)
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, LoginRequest))
+        self.assertTrue(isinstance(decodedMsg, ServerLoginRequest))
+
+        self.assertEqual(decodedMsg.conversationId, 1)
+        self.assertEqual(decodedMsg.messageId, 2)
+
+        self.assertEqual(decodedMsg.processType, 'MainServer')
+        self.assertEqual(decodedMsg.processLabel, 'label')
+        self.assertEqual(decodedMsg.identity, 'someId')
+
+    def testStatisticsRequestEncodingDecoding(self):
+        timePeriod = DateRange(date(2017,1,31),date(2017,9,1))
+        cameras = ['25', '65', '69']
+        msg = StatisticsRequest(timePeriod, 'Weekly', cameras)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.timePeriod, timePeriod)
+        self.assertEqual(msg.statsType, 'Weekly')
+
+        self.assertIsNot(msg.cameras, None)
+        self.assertEqual(msg.cameras[0], '25')
+        self.assertEqual(msg.cameras[1], '65')
+        self.assertEqual(msg.cameras[2], '69')
+
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, StatisticsRequest))
+
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+
+        self.assertEqual(decodedMsg.timePeriod.startDate.year, timePeriod.startDate.year)
+        self.assertEqual(decodedMsg.timePeriod.startDate.month, timePeriod.startDate.month)
+        self.assertEqual(decodedMsg.timePeriod.startDate.day, timePeriod.startDate.day)
+        self.assertEqual(decodedMsg.timePeriod.endDate.year, timePeriod.endDate.year)
+        self.assertEqual(decodedMsg.timePeriod.endDate.month, timePeriod.endDate.month)
+        self.assertEqual(decodedMsg.timePeriod.endDate.day, timePeriod.endDate.day)
+        self.assertEqual(decodedMsg.statsType, 'Weekly')
+
+        self.assertIsNot(decodedMsg.cameras, None)
+        self.assertEqual(decodedMsg.cameras[0], '25')
+        self.assertEqual(decodedMsg.cameras[1], '65')
+        self.assertEqual(decodedMsg.cameras[2], '69')
+
+    def testSubscribeRequestEncodingDecoding(self):
+        msg = SubscribeRequest(42)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.clusterId, 42)
+        msg.initConversationIdMessageId(1,2)
+        self.assertEqual(msg.conversationId, 1)
+        self.assertEqual(msg.messageId, 2)
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, SubscribeRequest))
+        self.assertEqual(decodedMsg.conversationId, 1)
+        self.assertEqual(decodedMsg.messageId, 2)
+        self.assertEqual(decodedMsg.clusterId, 42)
+
+    def testSyncDataRequestEncodingDecoding(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        data =  [
+            PictureInfo(picture, timeStamp, 1, 2)
+        ]
+        msg = SyncDataRequest(data)
+        self.assertIsNot(msg, None)
+
+        self.assertIsNot(msg.data, None)
+        self.assertTrue(np.array_equal(msg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.data[0].timeStamp, timeStamp)
+        self.assertEqual(msg.data[0].cameraId, 1)
+        self.assertEqual(msg.data[0].clusterId, 2)
+
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, SyncDataRequest))
+
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+
+        self.assertIsNot(decodedMsg.data, None)
+        self.assertTrue(np.array_equal(decodedMsg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(decodedMsg.data[0].timeStamp, timeStamp)
+        self.assertEqual(decodedMsg.data[0].cameraId, 1)
+        self.assertEqual(decodedMsg.data[0].clusterId, 2)
 
 if __name__ == '__main__':
     unittest.main()
