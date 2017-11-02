@@ -10,6 +10,7 @@ from CommunicationLibrary.Messages.SharedObjects import *
 
 class TestMessages(unittest.TestCase):
 
+    ########## Abstract Messages #############
     def testMessageEncodingDecoding(self):
         msg = Message()
         self.assertIsNot(msg, None)
@@ -18,6 +19,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.messageId, 2)
         encodedMsg = msg.encode()
         decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
         self.assertTrue(isinstance(decodedMsg, Message))
         self.assertEqual(decodedMsg.conversationId, 1)
         self.assertEqual(decodedMsg.messageId, 2)
@@ -31,35 +33,99 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.messageId, 3)
         encodedMsg = msg.encode()
         decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
         self.assertTrue(isinstance(decodedMsg, Message))
         self.assertTrue(isinstance(decodedMsg, Reply))
         self.assertEqual(decodedMsg.conversationId, 2)
         self.assertEqual(decodedMsg.messageId, 3)
         self.assertEqual(decodedMsg.success, True)
 
+    def testRequestMessageEncodingDecoding(self):
+        msg = Request()
+        self.assertIsNot(msg, None)
+        msg.initConversationIdMessageId(1,2)
+        self.assertEqual(msg.conversationId, 1)
+        self.assertEqual(msg.messageId, 2)
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertEqual(decodedMsg.conversationId, 1)
+        self.assertEqual(decodedMsg.messageId, 2)
 
-    # def testReplyEncodingDecoding(self):
-    #     msg = Reply(True)
-    #     processedMsg = msg.encode().decode()
-    #     self.assertEqual(msg, processedMsg)
-    #     self.assertEqual(msg.success, True)
-    #
-    # def testRequestEncodingDecoding(self):
-    #     msg = Request()
-    #     processedMsg = msg.encode().decode()
-    #     self.assertEqual(msg, processedMsg)
-    #
-    # def testAckReplyEncodingDecoding(self):
-    #     msg = AckReply(True)
-    #     processedMsg = msg.encode().decode()
-    #     self.assertEqual(msg, processedMsg)
-    #     self.assertEqual(msg.success, True)
-    #
-    # def testAliveReplyEncodingDecoding(self):
-    #     msg = AliveReply(True)
-    #     processedMsg = msg.encode().decode()
-    #     self.assertEqual(msg, processedMsg)
-    #     self.assertEqual(msg.success, True)
+    ########## Reply Messages #############
+    def testAckReplyEncodingDecoding(self):
+        msg = AckReply(False)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, False)
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, AckReply))
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+        self.assertEqual(decodedMsg.success, False)
+
+    def testAliveReplyEncodingDecoding(self):
+        msg = AliveReply(False)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, False)
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, AliveReply))
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+        self.assertEqual(decodedMsg.success, False)
+
+    def testLoginReplyEncodingDecoding(self):
+        dateTime = datetime.now()
+        process = ProcessInfo(1, 'MainServer', '127.0.0.2:3000', 'Info about Process', 'idle', dateTime)
+        msg = LoginReply(True, process)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        self.assertIsNot(msg.process, None)
+        self.assertEqual(msg.process.processId, 1)
+        self.assertEqual(msg.process.processType, 'MainServer')
+        self.assertEqual(msg.process.endPoint, '127.0.0.2:3000')
+        self.assertEqual(msg.process.label, 'Info about Process')
+        self.assertEqual(msg.process.status, 'idle')
+        self.assertEqual(msg.process.aliveTimeStamp, dateTime)
+
+        msg.initConversationIdMessageId(2,3)
+        self.assertEqual(msg.conversationId, 2)
+        self.assertEqual(msg.messageId, 3)
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, LoginReply))
+
+        self.assertEqual(decodedMsg.conversationId, 2)
+        self.assertEqual(decodedMsg.messageId, 3)
+        self.assertEqual(decodedMsg.success, True)
+
+        self.assertIsNot(decodedMsg.process, None)
+        self.assertEqual(decodedMsg.process.processId, 1)
+        self.assertEqual(decodedMsg.process.processType, 'MainServer')
+        self.assertEqual(decodedMsg.process.endPoint, '127.0.0.2:3000')
+        self.assertEqual(decodedMsg.process.label, 'Info about Process')
+        self.assertEqual(decodedMsg.process.status, 'idle')
+        self.assertEqual(decodedMsg.process.aliveTimeStamp, dateTime)
     #
     # def testLoginReplyEncodingDecoding(self):
     #     dateTime = datetime.now()
