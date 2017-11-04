@@ -4,8 +4,8 @@ import ConversationManager
 class CommunicationSubsystem :
     """Application Level Communication Protocol Manager"""
     def __init__(self):
-        self.fromConversationQueue = Queue()
-        self.conversationManager = ConversationManager.ConversationManager(fromConversationQueue)
+        self.fromConversationQueue = Queue.Queue()
+        self.conversationManager = ConversationManager.ConversationManager(self.fromConversationQueue)
 
     def sendMessage(self, envelope):
         """ Method used by the application to send message """
