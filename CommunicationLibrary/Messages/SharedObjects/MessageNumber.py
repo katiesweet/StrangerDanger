@@ -1,5 +1,4 @@
-#!/usr/bin/
-
+#!/usr/bin/python
 
 class MessageNumber:
     def __init__(self, processId, seqNumber):

@@ -1,5 +1,5 @@
-#!/usr/bin
-from AbstractMessages.Request import Request
+#!/usr/bin/python
+from CommunicationLibrary.Messages.AbstractMessages.Request import Request
 
 
 class SaveMotionRequest(Request):

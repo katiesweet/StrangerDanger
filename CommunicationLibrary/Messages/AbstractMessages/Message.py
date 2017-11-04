@@ -1,20 +1,22 @@
-#!/usr/bin
+#!/usr/bin/python
 from abc import ABCMeta, abstractmethod
-from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
+#from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
+import cPickle as pickle
 
 
 class Message:
     __metaclass__ = ABCMeta
 
-    @abstractmethod
     def __init__(self):
-        self.messageId = CommunicationSubsystem.getMessageId()
-        self.conversationId = CommunicationSubsystem.getConversationId()
-
-    @abstractmethod
-    def encode():
         pass
 
-    @abstractmethod
-    def decode():
-        pass
+    def initConversationIdMessageId(self, conversationId, messageId):
+        self.conversationId = conversationId
+        self.messageId = messageId
+
+    def encode(self):
+        return pickle.dumps(self)
+
+    @staticmethod
+    def decode(encodedMsg):
+        return pickle.loads(encodedMsg)

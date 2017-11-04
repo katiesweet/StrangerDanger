@@ -1,5 +1,4 @@
-#!/usr/bin
-
+#!/usr/bin/python
 
 class ProcessInfo:
 

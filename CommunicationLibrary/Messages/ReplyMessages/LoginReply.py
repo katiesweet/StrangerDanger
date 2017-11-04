@@ -1,5 +1,5 @@
-#!/usr/bin
-from AbstractMessages.Reply import Reply
+#!/usr/bin/python
+from CommunicationLibrary.Messages.AbstractMessages.Reply import Reply
 
 
 class LoginReply(Reply):
