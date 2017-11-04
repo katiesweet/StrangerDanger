@@ -1,5 +1,8 @@
 import socket
 import thread
+#import sys
+from CommunicationLibrary.Messages.AbstractMessages import * # Message
+from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
 
 class UdpConnection:
     # QUESTION: HOW SHOULD IP ADDRESS AND PORT BE ASSIGNED???
@@ -44,10 +47,9 @@ class UdpConnection:
             try:
                 data, addr = udpSocket.recvfrom(1024)
                 if data:
-                    print "Received message: ", data
-                    #udpSocket.sendto(data, addr)
-                    #message = Message.decode (data) # QUESTION: SHEM
-                    #envelope = Envelope(addr, message)
-                    #self.incomingMessageQueue.put(envelope)
+                    message = Message.decode(data) # QUESTION: SHEM
+                    print "Received message: ", message
+                    envelope = Envelope(addr, message)
+                    self.incomingMessageQueue.put(envelope)
             except:
                 continue

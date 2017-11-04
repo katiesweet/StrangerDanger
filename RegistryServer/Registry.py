@@ -1,12 +1,8 @@
 import sys
-sys.path.append('../CommunicationLibrary/CommunicationSubsystem')
 
-import CommunicationSubsystem
+sys.path.append('../') # Start at root directory for all imports
 
-class Envelope:
-    def __init__(self, endpoint, message):
-        self.endpoint = endpoint
-        self.message = message
+from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 
 class Registry:
     def __init__(self):

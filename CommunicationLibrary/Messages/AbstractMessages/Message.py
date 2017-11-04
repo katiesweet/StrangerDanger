@@ -1,13 +1,17 @@
 #!/usr/bin/python
 from abc import ABCMeta, abstractmethod
-#from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 import cPickle as pickle
 
 
 class Message:
     __metaclass__ = ABCMeta
 
+    processId = 0
+    messageNum = 0
+
     def __init__(self):
+        self.messageId = (Message.processId, Message.messageNum)
+        Message.messageNum += 1
         pass
 
     def initConversationIdMessageId(self, conversationId, messageId):

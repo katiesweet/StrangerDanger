@@ -39,10 +39,12 @@ class ConversationManager:
     def __run(self):
         while self.shouldRun:
             if not self.fromSocketQueue.empty():
+                print "Received envelope"
                 envelope = self.fromSocketQueue.get()
-                conversationId = envelope.message.conversationId
+                print "Message Id:", envelope.message.messageId
 
-                if conversationId in self.conversations:
-                    self.conversations[newMessageId].receivedNewMessage(envelope)
-                else:
-                    self.__createConveration(envelope, envelopeIsOutgoing=False)
+                #conversationId = envelope.message.conversationId
+                #if conversationId in self.conversations:
+                #    self.conversations[newMessageId].receivedNewMessage(envelope)
+                #else:
+                #    self.__createConveration(envelope, envelopeIsOutgoing=False)

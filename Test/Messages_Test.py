@@ -2,6 +2,9 @@
 import unittest
 import numpy as np
 from datetime import datetime, date
+import sys
+sys.path.append("../")
+
 from CommunicationLibrary.Messages.AbstractMessages import *
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
