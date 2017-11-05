@@ -1,5 +1,6 @@
 import socket
 import thread
+import logging
 #import sys
 from CommunicationLibrary.Messages.AbstractMessages import * # Message
 from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
@@ -37,6 +38,7 @@ class UdpConnection:
                 encodedMessage = envelope.message.encode() # QUESTION: SHEM
                 try:
                     print "Sending message", envelope.message, " to ", envelope.endpoint
+                    logging.debug("Sending message")
                     udpSocket.sendto(encodedMessage, envelope.endpoint)
                     #udpSocket.sendTo(encodedMessage, envelope.endpoint)
                 except:
@@ -50,6 +52,7 @@ class UdpConnection:
                     message = Message.decode(data) # QUESTION: SHEM
                     print "Received message: ", message
                     envelope = Envelope(addr, message)
+                    logging.debug("Received message")
                     self.incomingMessageQueue.put(envelope)
             except:
                 continue
