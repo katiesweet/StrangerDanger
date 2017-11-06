@@ -1,6 +1,9 @@
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
 
+import Queue
+import thread
+
 # TODO use template pattern for specialization out of super class methods
 class BaseConversation(object):
 
@@ -27,7 +30,6 @@ class BaseConversation(object):
         """Called from conversation manager for when a socket receives a message intended for this conversation. """
         self.myIncomingMessageQueue.append(envelope)
 
-
     def __run(self):
         while self.shouldRun:
             continue
@@ -36,14 +38,11 @@ class BaseConversation(object):
 
 class RegistrationConversation(BaseConversation):
     initiation_message = RegisterRequest
-    protocol = {}
-    # protocol = {}; #  a dictionary {bool, MessageType} that represents the protocol of the conversation
-    # take care of this in the init, but set default in base
+    protocol = [{RegisterRequest, False},
+                {RegisterReply, False}]
 
-    # TODO this is unnecessary unless something other than calling the super init
-    # method is happening here
-    def __init__(self, message):
-        super(RegistrationConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(RegistrationConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
 # class InitiatedRegistrationConversation(RegistrationConversation):
@@ -54,10 +53,11 @@ class RegistrationConversation(BaseConversation):
 
 class SubscribeConversation(BaseConversation):
     initiation_message = SubscribeRequest
-    protocol = {}
+    protocol = [{SubscribeRequest, False},
+                {AckReply, False}]
 
-    def __init__(self, message):
-        super(SubscribeConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(SubscribeConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
 # class InitiatedSubscribeConversation(SubscribeConversation):
@@ -68,24 +68,28 @@ class SubscribeConversation(BaseConversation):
 
 class RequestStatisticsConversation(BaseConversation):
     initiation_message = StatisticsRequest
-    protocol = {}
 
-    def __init__(self, message):
-        super(RequestStatisticsConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(RequestStatisticsConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
-# class InitiatedRequestStatisticsConversation(RequestStatisticsConversation):
-#     pass
-#
-# class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
-#     pass
+class InitiatedRequestStatisticsConversation(RequestStatisticsConversation):
+    protocol = [{StatisticsRequest, False},
+                # QUESTION receiving heartbeats here
+                {StatisticsReply, False}]
+
+class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
+    protocol = [{StatisticsRequest, False},
+                {CalcStatisticsRequest, False}]
 
 class RawDataQueryConversation(BaseConversation):
     initiation_message = RawQueryRequest
-    protocol = {}
+    protocol = [{RawQueryRequest, False},
+                # QUESTION{AliveRequest/AliveReply/AckReply, False}, # representing state messages?
+                {RawQueryReply, False}]
 
-    def __init__(self, message):
-        super(RawDataQueryConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(RawDataQueryConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
 # class InitiatedRawDataQueryConversation(RawDataQueryConversation):
@@ -96,10 +100,11 @@ class RawDataQueryConversation(BaseConversation):
 
 class SyncDataConversation(BaseConversation):
     initiation_message = SyncDataRequest
-    protocol = {}
+    protocol = [{SyncDataRequest, False},
+                {SyncDataReply, False}]
 
-    def __init__(self, message):
-        super(SyncDataConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(SyncDataConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
 # class InitiatedSyncDataConversation(SyncDataConversation):
@@ -110,38 +115,38 @@ class SyncDataConversation(BaseConversation):
 
 class MainServerListConversation(BaseConversation):
     initiation_message = ServerListRequest
-    protocol = {}
 
-    def __init__(self, message):
-        super(MainServerListConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(MainServerListConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
-# class InitiatedMainServerListConversation(MainServerListConversation):
-#     pass
-#
-# class ReceivedMainServerListConversation(MainServerListConversation):
-#     pass
+class InitiatedMainServerListConversation(MainServerListConversation):
+    protocol = [{ServerListRequest, False},
+                {ServerListReply, False}]
+
+class ReceivedMainServerListConversation(MainServerListConversation):
+    protocol = [{ServerListRequest, False},
+                {AliveRequest, False},  # QUESTION represent creation message for a new conversation here?
+                {ServerListReply, False}]
 
 class CalculateStatsConversation(BaseConversation):
     initiation_message = CalcStatisticsRequest
-    protocol = {}
+    protocol = [{CalcStatisticsRequest, False},
+                # QUESTION sending state back to client
+                {StatisticsReply, False}]
 
-    def __init__(self, message):
-        super(CalculateStatsConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(CalculateStatsConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
-# class InitiatedCalculateStatsConversation(CalculateStatsConversation):
-#     pass
-#
-# class ReceivedCalculateStatsConversation(CalculateStatsConversation):
-#     pass
 
 class TransferMotionImageConversation(BaseConversation):
     initiation_message = SaveMotionRequest
-    protocol = {}
+    protocol = [{SaveMotionRequest, False},
+                {MotionDetectedReply, False}]
 
-    def __init__(self, message):
-        super(TransferMotionImageConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(TransferMotionImageConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
 # class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
@@ -152,10 +157,11 @@ class TransferMotionImageConversation(BaseConversation):
 
 class GetStatusConversation(BaseConversation):
     initiation_message = AliveRequest
-    protocol = {}
+    protocol = [{AliveRequest, False},
+                {AliveReply, False}]
 
-    def __init__(self, message):
-        super(GetStatusConversation, self).__init__(message)
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        super(GetStatusConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
         return
 
 # class InitiatedGetStatusConversation(TransferMotionImageConversation):
@@ -165,22 +171,25 @@ class GetStatusConversation(BaseConversation):
 #     pass
 
 class ConversationFactory:
-    CONVERSATIONS = [RegistrationConversation, SubscribeConversation,
+    CONVERSATION_TYPES = [RegistrationConversation, SubscribeConversation,
         RequestStatisticsConversation, RawDataQueryConversation,
         SyncDataConversation, MainServerListConversation,
         CalculateStatsConversation, TransferMotionImageConversation,
         GetStatusConversation, ]
 
     def __init__(self):
-        # TODO not sure what should go here yet
+        # QUESTION not sure what should go here yet
         return
 
-    #TODO make all conversations, create mapping to each one based on initialization message, write out protocols per each conversation
-
-    def create_conversation(self, message, is_incoming):
-        # message = Message object, is_incoming specifies whether the
-        # the message was recieved (or sent)
-
-        # based on message and is_incoming, map to a Conversation class type
-        # and instantiate (and update any state) and pass back
-        return
+    def create_conversation(self, envelope, is_outgoing, toSocketQueue, fromConversationQueue):
+        class_type = None
+        conversation = None
+        for convo in self.CONVERSATION_TYPES:
+            if convo.initiation_message == type(envelope):
+                class_type = convo
+                break;
+        if class_type:
+            conversation = class_type(envelope=envelope,
+                envelopeIsOutgoing=is_outgoing, toSocketQueue=toSocketQueue,
+                fromConversationQueue=fromConversationQueue)
+        return conversation
