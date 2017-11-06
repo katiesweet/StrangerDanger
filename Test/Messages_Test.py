@@ -28,7 +28,6 @@ class TestMessages(unittest.TestCase):
     def testMessageEncodingDecoding(self):
         msg = Message()
         self.assertIsNot(msg, None)
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -42,7 +41,6 @@ class TestMessages(unittest.TestCase):
         msg = Reply(True)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.success, True)
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -57,7 +55,6 @@ class TestMessages(unittest.TestCase):
     def testRequestMessageEncodingDecoding(self):
         msg = Request()
         self.assertIsNot(msg, None)
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -73,7 +70,6 @@ class TestMessages(unittest.TestCase):
         msg = AckReply(False)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.success, False)
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -90,7 +86,6 @@ class TestMessages(unittest.TestCase):
         msg = AliveReply(False)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.success, False)
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -117,7 +112,6 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.process.status, 'idle')
         self.assertEqual(msg.process.aliveTimeStamp, dateTime)
 
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -145,7 +139,6 @@ class TestMessages(unittest.TestCase):
         msg = MotionDetectedReply(True)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.success, True)
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -172,7 +165,6 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.data.cameraId, 1)
         self.assertEqual(msg.data.clusterId, 2)
 
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -208,7 +200,6 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.process.status, 'idle')
         self.assertEqual(msg.process.aliveTimeStamp, dateTime)
 
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -247,7 +238,6 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.servers[1].host, '127.0.0.5')
         self.assertEqual(msg.servers[1].port, '4060')
 
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -279,7 +269,6 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.report.weeklyMotionEvents, 5)
         self.assertEqual(msg.report.dailyMotionEvents, 2)
 
-        msg.setMessageId()
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -303,7 +292,7 @@ class TestMessages(unittest.TestCase):
         msg = SyncDataReply(True)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.success, True)
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -320,7 +309,7 @@ class TestMessages(unittest.TestCase):
     def testAliveRequestEncodingDecoding(self):
         msg = AliveRequest()
         self.assertIsNot(msg, None)
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -351,7 +340,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.data[0].cameraId, 4)
         self.assertEqual(msg.data[0].clusterId, 5)
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -391,7 +380,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.clusterId, 15)
         self.assertEqual(msg.clusterIdPassword, 'password123')
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -423,7 +412,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.username, 'shemarama')
         self.assertEqual(msg.password, 'password123')
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -452,7 +441,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.processLabel, 'label')
         self.assertEqual(msg.identity, 'someId')
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -483,7 +472,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.cameras[1], '126')
         self.assertEqual(msg.cameras[2], '6')
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -515,7 +504,7 @@ class TestMessages(unittest.TestCase):
         self.assertIsNot(msg, None)
         self.assertEqual(msg.identity, 'someId')
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -544,7 +533,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.pictureInfo.cameraId, 1)
         self.assertEqual(msg.pictureInfo.clusterId, 2)
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -568,7 +557,7 @@ class TestMessages(unittest.TestCase):
     def testServerListRequestEncodingDecoding(self):
         msg = ServerListRequest()
         self.assertIsNot(msg, None)
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -587,7 +576,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.processLabel, 'label')
         self.assertEqual(msg.identity, 'someId')
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -620,7 +609,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.cameras[1], '65')
         self.assertEqual(msg.cameras[2], '69')
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
@@ -652,7 +641,7 @@ class TestMessages(unittest.TestCase):
         msg = SubscribeRequest(42)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.clusterId, 42)
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
         encodedMsg = msg.encode()
@@ -680,7 +669,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(msg.data[0].cameraId, 1)
         self.assertEqual(msg.data[0].clusterId, 2)
 
-        msg.setMessageId()
+
         msgId = msg.messageId
         convId = msg.conversationId
 
