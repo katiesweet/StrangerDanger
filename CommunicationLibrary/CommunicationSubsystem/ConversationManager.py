@@ -6,7 +6,7 @@ import logging
 
 class ConversationManager:
     """Conversation Level Communication Protocol Manager"""
-    def __init__(self, fromConversationQueue, myEndpoint):
+    def __init__(self, fromConversationQueue, myEndpoint, shouldRun = True):
 
         self.fromConversationQueue = fromConversationQueue # Messages for app
         self.toSocketQueue = Queue.Queue() # Messages to be sent by socket
@@ -18,10 +18,11 @@ class ConversationManager:
         self.conversations = {}
 
         # Thread management
-        self.shouldRun = True
+        self.shouldRun = shouldRun
         thread.start_new_thread(self.__run, ())
 
     def __del__(self):
+        # TODO: This destructor isn't getting called.
         logging.info("Destroying UDP Socket")
         self.shouldRun = False
 
@@ -35,7 +36,7 @@ class ConversationManager:
 
     def __createConversation(self, envelope, envelopeIsOutgoing):
         """Creates a conversation and appends it to the class' known conversations. The Conversation.Conversation() constructor should be a factory that returns the appropriate conversation type. The constructor also handles sending the first message automatically."""
-        convoId = envelope.conversationId
+        convoId = envelope.message.conversationId
         logging.debug("Creating conversation with conversationId " + \
             repr(convoId))
         conversations[convoId] = Conversation.Conversation(envelope, \

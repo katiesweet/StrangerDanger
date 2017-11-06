@@ -3,7 +3,8 @@ sys.path.append('../')
 
 import logging
 logging.basicConfig(filename="Client.log", level=logging.DEBUG, \
-    format='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
+    format='%(asctime)s - %(levelname)s - %(module)s - Thread: %(thread)d -\
+    %(message)s')
 
 from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 from CommunicationLibrary.Messages.RequestMessages import * # AliveRequest

@@ -17,7 +17,7 @@ class CommunicationSubsystem :
             repr(envelope))
         self.conversationManager.sendMessage(envelope)
 
-    def getMessage(self, envelope):
+    def getMessage(self):
         """ Method used by the application to get a message it (and not the conversation), needs to handle """
         if not self.fromConversationQueue.empty():
             logging.info("Message received for application handling")
