@@ -1,22 +1,25 @@
 #!/usr/bin/python
 from abc import ABCMeta, abstractmethod
 import cPickle as pickle
-
+import copy
+from CommunicationLibrary.Messages.SharedObjects.MessageId import MessageId
 
 class Message:
     __metaclass__ = ABCMeta
 
-    processId = 0
-    messageNum = 0
-
     def __init__(self):
-        self.messageId = (Message.processId, Message.messageNum)
-        Message.messageNum += 1
-        pass
+        self.messageId = None
+        self.conversationId = None
 
-    def initConversationIdMessageId(self, conversationId, messageId):
-        self.conversationId = conversationId
+    # def setMessageIdConversationId(self):
+    #     self.setMessageIdConversationId(MessageId.create())
+    #
+    def setMessageId(self, messageId=MessageId.create()):
+        self.setMessageIdConversationId(messageId, copy.deepcopy(messageId))
+
+    def setMessageIdConversationId(self, messageId, conversationId):
         self.messageId = messageId
+        self.conversationId = conversationId
 
     def encode(self):
         return pickle.dumps(self)
