@@ -1,13 +1,16 @@
-from CommunicationLibrary.Messages.ReplyMessages import *
-from CommunicationLibrary.Messages.RequestMessages import *
-
 import Queue
 import thread
 
-# TODO use template pattern for specialization out of super class methods
-class BaseConversation(object):
+from CommunicationLibrary.Messages.ReplyMessages import *
+from CommunicationLibrary.Messages.RequestMessages import *
 
+class BaseConversation(object):
+    # TODO use template pattern for specialization out of super class methods
+
+    #TODO add helper functions to know what to send next, update protocol status
+    #  (replace false with actual message instead of true?), to base and subclasses
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
+        # QUESTION on functionality (what all they need to be able to do) of conversations
         self.toSocketQueue = toSocketQueue # Used to send a message
         self.fromConversationQueue = fromConversationQueue # Used to pass a message to the main application
 
@@ -176,6 +179,7 @@ class ConversationFactory:
         SyncDataConversation, MainServerListConversation,
         CalculateStatsConversation, TransferMotionImageConversation,
         GetStatusConversation, ]
+        # TODO add in received/initalized only conversation classes as needed...
 
     def __init__(self):
         # QUESTION not sure what should go here yet
@@ -185,7 +189,7 @@ class ConversationFactory:
         class_type = None
         conversation = None
         for convo in self.CONVERSATION_TYPES:
-            if convo.initiation_message == type(envelope):
+            if convo.initiation_message == type(envelope): #TODO use is_outgoing to distinguish between initialized/received conversation types
                 class_type = convo
                 break;
         if class_type:
