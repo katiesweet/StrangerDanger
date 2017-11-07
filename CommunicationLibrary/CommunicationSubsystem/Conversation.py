@@ -5,12 +5,7 @@ from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
 
 class BaseConversation(object):
-    # TODO use template pattern for specialization out of super class methods
-
-    #TODO add helper functions to know what to send next, update protocol status
-    #  (replace false with actual message instead of true?), to base and subclasses
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
-        # QUESTION on functionality (what all they need to be able to do) of conversations
         self.toSocketQueue = toSocketQueue # Used to send a message
         self.fromConversationQueue = fromConversationQueue # Used to pass a message to the main application
 
@@ -21,9 +16,23 @@ class BaseConversation(object):
             self.myOutgoingMessageQueue.put(envelope)
         else:
             self.myIncomingMessageQueue.put(envelope)
-
+        print(self.protocol)
         self.shouldRun = True
-        thread.startNewThread(self.__run)
+        # thread.startNewThread(self.__run)
+        thread.start_new_thread(self.__run, ())
+
+    def checkOffMessage(self, index):
+        # TODO this is just psuedo code
+        self.protocol[index] = True
+
+    def getCurrentMessage(self):
+        # TODO this is just psuedo code
+        currentType = None
+        if False in self.protocol.values();
+            for messageType in self.protocol:
+                if self.protocol.get(messageType) == False:
+                    currentType = self.protocol.messageType
+        return currentType, index
 
     def sendNewMessage(self, envelope):
         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
@@ -31,14 +40,27 @@ class BaseConversation(object):
 
     def receivedNewMessage(self, envelope):
         """Called from conversation manager for when a socket receives a message intended for this conversation. """
+        # handle the case that it is the last message in the protocol
+        # handle the case that it doesn't need to be sent to the application
+        # also check that the message matches the protocol
+        # if it does
+            # handle it by checking if it is the last message
+            # handle it by checking that it doesn't need to be sent to the application
+            # handle it by sending it ot the application
         self.myIncomingMessageQueue.put(envelope)
 
     def __run(self):
         while self.shouldRun:
             continue
+            # if not self.myOutgoingMessageQueue.empty():
+            #     message = self.myOutgoingMessageQueue.get()
+            #     self.toSocketQueue.put(message)
+            # if not self.myIncomingMessageQueue.empty():
+            #     message = self.myIncomingMessageQueue.get()
+            #     self.fromConversationQueue.put(message)
+
 
 # TODO separate out the million conversation classes into folders/files
-
 class RegistrationConversation(BaseConversation):
     initiation_message = RegisterRequest
     protocol = [{RegisterRequest, False},
@@ -83,6 +105,7 @@ class InitiatedRequestStatisticsConversation(RequestStatisticsConversation):
 
 class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
     protocol = [{StatisticsRequest, False},
+                # TODO put in seconds for sending these in loop
                 {CalcStatisticsRequest, False}]
 
 class RawDataQueryConversation(BaseConversation):
@@ -129,8 +152,9 @@ class InitiatedMainServerListConversation(MainServerListConversation):
 
 class ReceivedMainServerListConversation(MainServerListConversation):
     protocol = [{ServerListRequest, False},
-                {AliveRequest, False},  # QUESTION represent creation message for a new conversation here?
+                # {AliveRequest, False},  # QUESTION represent creation message for a new conversation here?
                 {ServerListReply, False}]
+
 
 class CalculateStatsConversation(BaseConversation):
     initiation_message = CalcStatisticsRequest
