@@ -2,25 +2,28 @@ import Queue
 import Conversation
 import UdpConnection
 import thread
+import logging
 
 class ConversationManager:
     """Conversation Level Communication Protocol Manager"""
-    def __init__(self, fromConversationQueue):
+    def __init__(self, fromConversationQueue, myEndpoint, shouldRun = True):
 
         self.fromConversationQueue = fromConversationQueue # Messages for app
         self.toSocketQueue = Queue.Queue() # Messages to be sent by socket
         self.fromSocketQueue = Queue.Queue() # Messages received by socket
 
-        self.udpSocket = UdpConnection.UdpConnection(self.toSocketQueue, self.fromSocketQueue)
+        self.udpSocket = UdpConnection.UdpConnection(self.toSocketQueue, self.fromSocketQueue, myEndpoint)
 
         # Conversation Id: Conversation
         self.conversations = {}
 
         # Thread management
-        self.shouldRun = True
+        self.shouldRun = shouldRun
         thread.start_new_thread(self.__run, ())
 
     def __del__(self):
+        # TODO: This destructor isn't getting called.
+        logging.info("Destroying UDP Socket")
         self.shouldRun = False
 
     def sendMessage(self, envelope):
@@ -33,15 +36,18 @@ class ConversationManager:
 
     def __createConversation(self, envelope, envelopeIsOutgoing):
         """Creates a conversation and appends it to the class' known conversations. The Conversation.Conversation() constructor should be a factory that returns the appropriate conversation type. The constructor also handles sending the first message automatically."""
-        convoId = envelope.conversationId
-        conversations[convoId] = Conversation.Conversation(envelope, envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue)
+        convoId = envelope.message.conversationId
+        logging.debug("Creating conversation with conversationId " + \
+            repr(convoId))
+        conversations[convoId] = Conversation.Conversation(envelope, \
+            envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue)
 
     def __run(self):
         while self.shouldRun:
             if not self.fromSocketQueue.empty():
-                print "Received envelope"
                 envelope = self.fromSocketQueue.get()
-                print "Message Id:", envelope.message.messageId
+                logging.debug("Received envelope from socket with messageId " \
+                    +  repr(envelope.message.messageId))
 
                 #conversationId = envelope.message.conversationId
                 #if conversationId in self.conversations:
