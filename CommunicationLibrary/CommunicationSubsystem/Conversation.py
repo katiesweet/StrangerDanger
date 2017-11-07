@@ -47,19 +47,20 @@ class BaseConversation(object):
         if m_type == AckReply and is_last:
             return True
 
-    def handle(self, m_type):
+    def handle(self, m_type, prev_envelope):
         # can be overridden in the subclass or to added to still call super()
         envelope = None
+        # TODO test creating new message, duplicating conversation id, packaging into envelope
+        # and placing into queue
         if m_type == AliveRequest:
             message = AliveReply(True)
-            # envelope =
-            # construct an envelope, where do I get my endpoint from? or create an envelope?
-        # if envelope:
-            # put message on socket's queue
+            message.setConversationId(prev_envelope.message.conversationId)
+            envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
+        if envelope:
+            self.toSocketQueue.put(envelope)
 
     def sendNewMessage(self, envelope):
         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
-        # QUESTION am I guaranteed an envelope here or should I check for one and construct one if they don't have one?
         m_type, is_last = self.getCurrentMessage()
         if isinstance(envelope.message, m_type):
             if self.checkOffMessage(m_type):
@@ -69,13 +70,18 @@ class BaseConversation(object):
                 return True
         return False
 
+    def self_destruct(self):
+        # TODO write function to delete conversation from list of conversations
+        # this is just going to delete itself from the list of conversations.
+        return
+
     def receivedNewMessage(self, envelope):
         """Called from conversation manager for when a socket receives a message intended for this conversation. """
         m_type, is_last = self.getCurrentMessage()
         if isinstance(envelope.message, m_type):
             if self.checkOffMessage(m_type):
                 if self.should_handle(m_type, is_last):
-                    self.handle(m_type)
+                    self.handle(m_type, envelope)
                 else:
                     self.myIncomingMessageQueue.put(envelope)
                 # if is_last:
