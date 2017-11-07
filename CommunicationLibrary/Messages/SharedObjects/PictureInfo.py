@@ -2,8 +2,7 @@
 
 class PictureInfo:
 
-    def __init__(self, picture, timeStamp, cameraId, clusterId):
+    def __init__(self, picture, timeStamp, cameraName):
         self.picture = picture
         self.timeStamp = timeStamp
-        self.cameraId = cameraId
-        self.clusterId = clusterId
+        self.cameraName = cameraName
