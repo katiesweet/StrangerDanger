@@ -23,4 +23,5 @@ class Client:
 
         var = raw_input("Enter something to quit.\n")
 
-Client()
+if __name__ == '__main__':
+    Client()
