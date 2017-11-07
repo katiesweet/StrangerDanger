@@ -12,8 +12,9 @@ class BaseConversation(object):
         self.myOutgoingMessageQueue = Queue.Queue()
         self.myIncomingMessageQueue = Queue.Queue()
 
+        self.checkOffMessage(self.initiation_message)
         if envelopeIsOutgoing:
-            self.myOutgoingMessageQueue.put(envelope
+            self.myOutgoingMessageQueue.put(envelope)
         else:
             self.myIncomingMessageQueue.put(envelope)
 
@@ -37,43 +38,49 @@ class BaseConversation(object):
             messageType = unfinished_messages[0]['type']
         if len(unfinished_messages) == 1:
             is_last = True
-        return messageType, is_last
+        return (messageType, is_last)
 
-    def should_handle(self, m_type):
-        # can be overriden to add to / still call super for this method in subclass
+    def should_handle(self, m_type, is_last):
+        # can be overridden in the subclass or to added to still call super()
         if m_type == AliveRequest:
+            return True
+        if m_type == AckReply and is_last:
             return True
 
     def handle(self, m_type):
-        # can be overriden to add to / still call super for this method in subclass
+        # can be overridden in the subclass or to added to still call super()
         message = None
         if m_type == AliveRequest:
             message = AliveReply(True)
-            # construct an envelope, where do I get my endpoint from?
+            # construct an envelope, where do I get my endpoint from? or create an envelope?
         # if message:
             # put message on socket's queue
 
     def sendNewMessage(self, envelope):
         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
-        # QUESTION am I guaranteed an evelope here or should I check for one and construct one if they don't have one?
-        m_type, is_last = self.getCurrentMessage()
+        # QUESTION am I guaranteed an envelope here or should I check for one and construct one if they don't have one?
+        m_type, is_last = self.getCurrentMessage
         if isinstance(envelope.message, m_type):
             if self.checkOffMessage(m_type):
                 self.myOutgoingMessageQueue.put(message)
                 # if is_last:
                     # self destruct on is_last or archive or something?
+                return True
+        return False
 
     def receivedNewMessage(self, envelope):
         """Called from conversation manager for when a socket receives a message intended for this conversation. """
         m_type, is_last = self.getCurrentMessage()
         if isinstance(envelope.message, m_type):
             if self.checkOffMessage(m_type):
-                if self.should_handle(m_type):
+                if self.should_handle(m_type, is_last):
                     self.handle(m_type)
                 else:
                     self.myIncomingMessageQueue.put(envelope)
                 # if is_last:
                     # self destruct on last or archive?
+                return True
+        return False
 
     def __run(self):
         while self.shouldRun:
@@ -88,6 +95,7 @@ class BaseConversation(object):
 # TODO separate out the million conversation classes into folders/files
 class RegistrationConversation(BaseConversation):
     initiation_message = RegisterRequest
+    initiated = None
     protocol = [{'type': RegisterRequest, 'status': False},
                 {'type': RegisterReply, 'status': False}]
 
@@ -105,6 +113,7 @@ class RegistrationConversation(BaseConversation):
 
 class SubscribeConversation(BaseConversation):
     initiation_message = SubscribeRequest
+    initiated = None
     protocol = [{'type': SubscribeRequest, 'status': False},
                 {'type': AckReply, 'status': False}]
 
@@ -123,6 +132,7 @@ class SubscribeConversation(BaseConversation):
 
 class RequestStatisticsConversation(BaseConversation):
     initiation_message = StatisticsRequest
+    initiated = None
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
         super(RequestStatisticsConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
@@ -133,6 +143,7 @@ class RequestStatisticsConversation(BaseConversation):
 
 
 class InitiatedRequestStatisticsConversation(RequestStatisticsConversation):
+    initiated = True
     protocol = [{'type': StatisticsRequest, 'status': False},
                 {'type': StatisticsReply, 'status': False}]
 
@@ -140,6 +151,7 @@ class InitiatedRequestStatisticsConversation(RequestStatisticsConversation):
         return 'InitiatedRequestStatisticsConversation'
 
 class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
+    initiated = False
     protocol = [{'type': StatisticsRequest, 'status': False},
                 # heartbeats
                 {'type': CalcStatisticsRequest, 'status': False}]
@@ -150,6 +162,7 @@ class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
 
 class RawDataQueryConversation(BaseConversation):
     initiation_message = RawQueryRequest
+    initiated = None
     protocol = [{'type': RawQueryRequest, 'status': False},
                 # hearbeats
                 {'type': RawQueryReply, 'status': False}]
@@ -168,6 +181,7 @@ class RawDataQueryConversation(BaseConversation):
 
 class SyncDataConversation(BaseConversation):
     initiation_message = SyncDataRequest
+    initiated = None
     protocol = [{'type': SyncDataRequest, 'status': False},
                 {'type': SyncDataReply, 'status': False}]
 
@@ -185,6 +199,7 @@ class SyncDataConversation(BaseConversation):
 
 class MainServerListConversation(BaseConversation):
     initiation_message = ServerListRequest
+    initiated = None
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue):
         super(MainServerListConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue)
@@ -194,6 +209,7 @@ class MainServerListConversation(BaseConversation):
         return 'MainServerListConversation'
 
 class InitiatedMainServerListConversation(MainServerListConversation):
+    initiated = True
     protocol = [{'type': ServerListRequest, 'status': False},
                 {'type': ServerListReply, 'status': False}]
 
@@ -201,6 +217,7 @@ class InitiatedMainServerListConversation(MainServerListConversation):
         return 'InitiatedMainServerListConversation'
 
 class ReceivedMainServerListConversation(MainServerListConversation):
+    initiated = False
     protocol = [{'type': ServerListRequest, 'status': False},
                 {'type': ServerListReply, 'status': False}]
 
@@ -209,6 +226,7 @@ class ReceivedMainServerListConversation(MainServerListConversation):
 
 class CalculateStatsConversation(BaseConversation):
     initiation_message = CalcStatisticsRequest
+    initiated = None # this conversation will only ever be received however
     protocol = [{'type': CalcStatisticsRequest, 'status': False},
                 # heartbeats
                 {'type': StatisticsReply, 'status': False}]
@@ -222,6 +240,7 @@ class CalculateStatsConversation(BaseConversation):
 
 class TransferMotionImageConversation(BaseConversation):
     initiation_message = SaveMotionRequest
+    initiated = None
     protocol = [{'type': SaveMotionRequest, 'status': False},
                 {'type': MotionDetectedReply, 'status': False}]
 
@@ -240,6 +259,7 @@ class TransferMotionImageConversation(BaseConversation):
 
 class GetStatusConversation(BaseConversation):
     initiation_message = AliveRequest
+    initiated = None
     protocol = [{'type': AliveRequest, 'status': False},
                 {'type': AliveReply, 'status': False}]
 
@@ -257,23 +277,34 @@ class GetStatusConversation(BaseConversation):
 
 class ConversationFactory:
     CONVERSATION_TYPES = [RegistrationConversation, SubscribeConversation,
-        RequestStatisticsConversation, RawDataQueryConversation,
-        SyncDataConversation, MainServerListConversation,
+        RawDataQueryConversation, ReceivedRequestStatisticsConversation,
+        InitiatedRequestStatisticsConversation, SyncDataConversation,
+        ReceivedMainServerListConversation, InitiatedMainServerListConversation,
         CalculateStatsConversation, TransferMotionImageConversation,
         GetStatusConversation, ]
-        # TODO add in received/initalized only conversation classes as needed...
 
     def __init__(self):
         return
+
+    def __str__(self):
+        return 'Conversation Factory'
 
     def create_conversation(self, envelope, is_outgoing, toSocketQueue, fromConversationQueue):
         class_type = None
         conversation = None
         for convo in self.CONVERSATION_TYPES:
-            #TODO use is_outgoing to distinguish between initialized/received conversation types
-            if convo.initiation_message == type(envelope):
-                class_type = convo
-                break;
+            if convo.initiated == True:
+                if convo.initiation_message == type(envelope.message) and is_outgoing:
+                    class_type = convo
+                    break;
+            elif convo.initiated == False:
+                if convo.initiation_message == type(envelope.message) and not is_outgoing:
+                    class_type = convo
+                    break;
+            elif convo.initiated == None:
+                if convo.initiation_message == type(envelope.message):
+                    class_type = convo
+                    break;
         if class_type:
             conversation = class_type(envelope=envelope,
                 envelopeIsOutgoing=is_outgoing, toSocketQueue=toSocketQueue,
