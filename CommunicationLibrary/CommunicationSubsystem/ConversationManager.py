@@ -14,6 +14,8 @@ class ConversationManager:
 
         self.udpSocket = UdpConnection.UdpConnection(self.toSocketQueue, self.fromSocketQueue, myEndpoint)
 
+        self.conversationFactory = Conversation.ConversationFactory()
+
         # Conversation Id: Conversation
         self.conversations = {}
 
@@ -28,19 +30,19 @@ class ConversationManager:
 
     def sendMessage(self, envelope):
         """Called by Communication Protocol when the application layer wants to send a new message."""
-        self.toSocketQueue.put(envelope)
-        # if envelope.conversationId in converations:
-        #     conversation[convoId].sendNewMessage(envelope)
-        # else:
-        #     self.__createConveration(envelope, envelopeIsOutgoing=True)
+        #self.toSocketQueue.put(envelope)
+        convoId = str(envelope.message.conversationId)
+        if convoId in self.conversations:
+            self.conversations[convoId].sendNewMessage(envelope)
+        else:
+            self.__createConversation(envelope, envelopeIsOutgoing=True)
 
     def __createConversation(self, envelope, envelopeIsOutgoing):
         """Creates a conversation and appends it to the class' known conversations. The Conversation.Conversation() constructor should be a factory that returns the appropriate conversation type. The constructor also handles sending the first message automatically."""
-        convoId = envelope.message.conversationId
+        convoId = str(envelope.message.conversationId)
         logging.debug("Creating conversation with conversationId " + \
             repr(convoId))
-        conversations[convoId] = Conversation.Conversation(envelope, \
-            envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue)
+        self.conversations[convoId] = self.conversationFactory.create_conversation(envelope, envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue)
 
     def __run(self):
         while self.shouldRun:
@@ -49,8 +51,8 @@ class ConversationManager:
                 logging.debug("Received envelope from socket with messageId " \
                     +  repr(envelope.message.messageId))
 
-                #conversationId = envelope.message.conversationId
-                #if conversationId in self.conversations:
-                #    self.conversations[newMessageId].receivedNewMessage(envelope)
-                #else:
-                #    self.__createConveration(envelope, envelopeIsOutgoing=False)
+                conversationId = str(envelope.message.conversationId)
+                if conversationId in self.conversations:
+                   self.conversations[conversationId].receivedNewMessage(envelope)
+                else:
+                   self.__createConversation(envelope, envelopeIsOutgoing=False)
