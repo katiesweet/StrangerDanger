@@ -4,6 +4,7 @@ import Queue
 sys.path.append("../../")
 
 from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem, ConversationManager, UdpConnection
+from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
 
 class CommunicationSubsystem_Test(unittest.TestCase):
 
@@ -54,7 +55,8 @@ class CommunicationSubsystem_Test(unittest.TestCase):
         fromQueue = Queue.Queue()
 
         connMan = ConversationManager.ConversationManager(fromQueue, endpoint, False)
-        connMan.sendMessage("TestMessage")
+        envelope = Envelope(('localhost', 50000), "TestMessage")
+        connMan.sendMessage(envelope)
         self.assertEqual(connMan.toSocketQueue.qsize(), 1)
 
     ######## UdpConnection #############
