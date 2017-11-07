@@ -49,11 +49,12 @@ class BaseConversation(object):
 
     def handle(self, m_type):
         # can be overridden in the subclass or to added to still call super()
-        message = None
+        envelope = None
         if m_type == AliveRequest:
             message = AliveReply(True)
+            # envelope =
             # construct an envelope, where do I get my endpoint from? or create an envelope?
-        # if message:
+        # if envelope:
             # put message on socket's queue
 
     def sendNewMessage(self, envelope):
