@@ -20,11 +20,6 @@ class TestMessages(unittest.TestCase):
     def setUpClass(cls):
         LocalProcessInfo.setProcessId(5)
 
-    def testLocalProcessInfo(self):
-        self.assertEquals(LocalProcessInfo.getProcessId(),5)
-
-
-
     ########## Abstract Messages #############
     def testMessageEncodingDecoding(self):
         msg = Message()
@@ -539,6 +534,24 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(timePeriod.endDate.month, 9)
         self.assertEqual(timePeriod.endDate.day, 1)
 
+    def testEnvelope(self):
+        endpoint = ('localhost', 50000)
+        msg = AckReply(True)
+        envelope = Envelope(endpoint, msg)
+        self.assertIsNot(envelope, None)
+        self.assertEqual(envelope.endpoint, endpoint)
+        self.assertEqual(envelope.message, msg)
+
+    def testLocalProcessInfo(self):
+        self.assertEquals(LocalProcessInfo.getProcessId(),5)
+
+    def testMessageId(self):
+        messageId = MessageId.create()
+        self.assertIsNot(messageId, None)
+        seqNum = messageId.sequenceNumber
+        nextSeqNum = MessageId.getNextSequenceNumber()
+        self.assertGreaterEqual(nextSeqNum, seqNum+1)
+
     def testMessageNumber(self):
         messageNumber = MessageNumber(2, 5)
         self.assertIsNot(messageNumber, None)
@@ -558,14 +571,21 @@ class TestMessages(unittest.TestCase):
 
     def testProcessInfo(self):
         dateTime = datetime.now()
-        process = ProcessInfo(1, 'ClientProcess', '127.0.0.3:3200', 'Info about Process', 'idle', dateTime)
+        process = ProcessInfo(1, ProcessType.ClientProcess, '127.0.0.3:3200', 'Info about Process', 'idle', dateTime)
         self.assertIsNot(process, None)
         self.assertEqual(process.processId, 1)
-        self.assertEqual(process.processType, 'ClientProcess')
+        self.assertEqual(process.processType, ProcessType.ClientProcess)
         self.assertEqual(process.endPoint, '127.0.0.3:3200')
         self.assertEqual(process.label, 'Info about Process')
         self.assertEqual(process.status, 'idle')
         self.assertEqual(process.aliveTimeStamp, dateTime)
+
+    def testProcessType(self):
+        self.assertEqual(ProcessType.Registry.value, 1)
+        self.assertEqual(ProcessType.MainServer.value, 2)
+        self.assertEqual(ProcessType.StatisticsServer.value, 3)
+        self.assertEqual(ProcessType.ClientProcess.value, 4)
+        self.assertEqual(ProcessType.CameraProcess.value, 5)
 
     def testPublicEndPoint(self):
         endpoint = PublicEndPoint('127.0.0.3', '4000')
