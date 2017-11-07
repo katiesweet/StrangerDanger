@@ -31,7 +31,7 @@ class CommunicationSubsystem_Test(unittest.TestCase):
 
     ########### ConversationManager ############
     def test_ConversationManager__ConstructorRunning(self):
-        endpoint = ('localhost', 50000)
+        endpoint = ('localhost', 0)
         fromQueue = Queue.Queue()
 
         connMan = ConversationManager.ConversationManager(fromQueue, endpoint)
@@ -41,7 +41,7 @@ class CommunicationSubsystem_Test(unittest.TestCase):
         self.assertTrue(connMan.shouldRun)
 
     def test_ConversationManager__ConstructorNotRunning(self):
-        endpoint = ('localhost', 50000)
+        endpoint = ('localhost', 0)
         fromQueue = Queue.Queue()
 
         connMan = ConversationManager.ConversationManager(fromQueue, endpoint, False)
@@ -50,7 +50,7 @@ class CommunicationSubsystem_Test(unittest.TestCase):
         self.assertFalse(connMan.shouldRun)
 
     def test_ConversationManager__SendMessage(self):
-        endpoint = ('localhost', 50000)
+        endpoint = ('localhost', 0)
         fromQueue = Queue.Queue()
 
         connMan = ConversationManager.ConversationManager(fromQueue, endpoint, False)
@@ -61,7 +61,7 @@ class CommunicationSubsystem_Test(unittest.TestCase):
     def test_UdpConnection_Constructor(self):
         outQueue = Queue.Queue()
         inQueue = Queue.Queue()
-        endpoint = ('localhost', 50000)
+        endpoint = ('localhost', 0)
 
         socket = UdpConnection.UdpConnection(outQueue, inQueue, endpoint)
         self.assertIsNot(socket, None)
