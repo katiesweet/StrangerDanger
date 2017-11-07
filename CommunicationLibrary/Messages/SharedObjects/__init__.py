@@ -3,8 +3,6 @@ from DateRange import *
 from Envelope import *
 from LocalProcessInfo import *
 from MessageId import *
-from MessageNumber import *
 from PictureInfo import *
-from ProcessInfo import *
 from ProcessType import *
 from PublicEndPoint import *
