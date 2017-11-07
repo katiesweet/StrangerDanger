@@ -20,11 +20,12 @@ class Registry:
         var = raw_input("Enter something to quit.\n")
 
     @staticmethod
-    def getProcessId():
+    def getNextProcessId():
         with Registry.threadLock:
             if Registry.nextProcessId == sys.maxint:
                 Registry.nextProcessId = 0
             Registry.nextProcessId += 1
         return Registry.nextProcessId
 
-Registry()
+if __name__ == '__main__':
+    Registry()

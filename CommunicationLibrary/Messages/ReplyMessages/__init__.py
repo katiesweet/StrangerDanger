@@ -1,6 +1,5 @@
 from AckReply import *
 from AliveReply import *
-from LoginReply import *
 from MotionDetectedReply import *
 from RawQueryReply import *
 from RegisterReply import *

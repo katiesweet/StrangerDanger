@@ -10,7 +10,8 @@ from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
 from CommunicationLibrary.Messages.SharedObjects import *
 from CommunicationLibrary.Messages.SharedObjects.LocalProcessInfo import LocalProcessInfo
-
+from CommunicationLibrary.Messages.SharedObjects.ProcessType import ProcessType
+from RegistryServer.Registry import Registry
 
 class TestMessages(unittest.TestCase):
 
@@ -98,43 +99,6 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, False)
 
-    def testLoginReplyEncodingDecoding(self):
-        dateTime = datetime.now()
-        process = ProcessInfo(1, 'MainServer', '127.0.0.2:3000', 'Info about Process', 'idle', dateTime)
-        msg = LoginReply(True, process)
-        self.assertIsNot(msg, None)
-        self.assertEqual(msg.success, True)
-        self.assertIsNot(msg.process, None)
-        self.assertEqual(msg.process.processId, 1)
-        self.assertEqual(msg.process.processType, 'MainServer')
-        self.assertEqual(msg.process.endPoint, '127.0.0.2:3000')
-        self.assertEqual(msg.process.label, 'Info about Process')
-        self.assertEqual(msg.process.status, 'idle')
-        self.assertEqual(msg.process.aliveTimeStamp, dateTime)
-
-        msgId = msg.messageId
-        convId = msg.conversationId
-
-        encodedMsg = msg.encode()
-        decodedMsg = Message.decode(encodedMsg)
-        self.assertIsNot(decodedMsg, None)
-
-        self.assertTrue(isinstance(decodedMsg, Message))
-        self.assertTrue(isinstance(decodedMsg, Reply))
-        self.assertTrue(isinstance(decodedMsg, LoginReply))
-
-        self.assertEqual(decodedMsg.conversationId, convId)
-        self.assertEqual(decodedMsg.messageId, msgId)
-        self.assertEqual(decodedMsg.success, True)
-
-        self.assertIsNot(decodedMsg.process, None)
-        self.assertEqual(decodedMsg.process.processId, 1)
-        self.assertEqual(decodedMsg.process.processType, 'MainServer')
-        self.assertEqual(decodedMsg.process.endPoint, '127.0.0.2:3000')
-        self.assertEqual(decodedMsg.process.label, 'Info about Process')
-        self.assertEqual(decodedMsg.process.status, 'idle')
-        self.assertEqual(decodedMsg.process.aliveTimeStamp, dateTime)
-
     def testMotionDetectedReplyEncodingDecoding(self):
         msg = MotionDetectedReply(True)
         self.assertIsNot(msg, None)
@@ -187,18 +151,10 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data.clusterId, 2)
 
     def testRegisterReplyEncodingDecoding(self):
-        dateTime = datetime.now()
-        process = ProcessInfo(1, 'ClientProcess', '127.0.0.3:3200', 'Info about Process', 'idle', dateTime)
-        msg = RegisterReply(True, process)
+        nextProcessId = Registry.getNextProcessId()
+        msg = RegisterReply(True, nextProcessId)
         self.assertIsNot(msg, None)
-        self.assertEqual(msg.success, True)
-        self.assertIsNot(msg.process, None)
-        self.assertEqual(msg.process.processId, 1)
-        self.assertEqual(msg.process.processType, 'ClientProcess')
-        self.assertEqual(msg.process.endPoint, '127.0.0.3:3200')
-        self.assertEqual(msg.process.label, 'Info about Process')
-        self.assertEqual(msg.process.status, 'idle')
-        self.assertEqual(msg.process.aliveTimeStamp, dateTime)
+        self.assertEqual(msg.processId, nextProcessId)
 
         msgId = msg.messageId
         convId = msg.conversationId
@@ -215,13 +171,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, True)
 
-        self.assertIsNot(decodedMsg.process, None)
-        self.assertEqual(decodedMsg.process.processId, 1)
-        self.assertEqual(decodedMsg.process.processType, 'ClientProcess')
-        self.assertEqual(decodedMsg.process.endPoint, '127.0.0.3:3200')
-        self.assertEqual(decodedMsg.process.label, 'Info about Process')
-        self.assertEqual(decodedMsg.process.status, 'idle')
-        self.assertEqual(decodedMsg.process.aliveTimeStamp, dateTime)
+        self.assertEqual(decodedMsg.processId, nextProcessId)
 
     def testServerListReplyEncodingDecoding(self):
         servers = [
@@ -370,96 +320,6 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data[0].cameraId, 4)
         self.assertEqual(decodedMsg.data[0].clusterId, 5)
 
-    def testCameraLoginRequestEncodingDecoding(self):
-        msg = CameraLoginRequest('CameraProcess','label','camMac','homeCam',15,'password123')
-        self.assertIsNot(msg, None)
-        self.assertEqual(msg.processType, 'CameraProcess')
-        self.assertEqual(msg.processLabel, 'label')
-        self.assertEqual(msg.identity, 'camMac')
-        self.assertEqual(msg.name, 'homeCam')
-        self.assertEqual(msg.clusterId, 15)
-        self.assertEqual(msg.clusterIdPassword, 'password123')
-
-
-        msgId = msg.messageId
-        convId = msg.conversationId
-
-        encodedMsg = msg.encode()
-        decodedMsg = Message.decode(encodedMsg)
-        self.assertIsNot(decodedMsg, None)
-
-        self.assertTrue(isinstance(decodedMsg, Message))
-        self.assertTrue(isinstance(decodedMsg, Request))
-        self.assertTrue(isinstance(decodedMsg, LoginRequest))
-        self.assertTrue(isinstance(decodedMsg, CameraLoginRequest))
-
-        self.assertEqual(decodedMsg.conversationId, convId)
-        self.assertEqual(decodedMsg.messageId, msgId)
-
-        self.assertEqual(decodedMsg.processType, 'CameraProcess')
-        self.assertEqual(decodedMsg.processLabel, 'label')
-        self.assertEqual(decodedMsg.identity, 'camMac')
-        self.assertEqual(decodedMsg.name, 'homeCam')
-        self.assertEqual(decodedMsg.clusterId, 15)
-        self.assertEqual(decodedMsg.clusterIdPassword, 'password123')
-
-    def testClientLoginRequestEncodingDecoding(self):
-        msg = ClientLoginRequest('ClientProcess','label','clientId','shemarama','password123')
-        self.assertIsNot(msg, None)
-        self.assertEqual(msg.processType, 'ClientProcess')
-        self.assertEqual(msg.processLabel, 'label')
-        self.assertEqual(msg.identity, 'clientId')
-        self.assertEqual(msg.username, 'shemarama')
-        self.assertEqual(msg.password, 'password123')
-
-
-        msgId = msg.messageId
-        convId = msg.conversationId
-
-        encodedMsg = msg.encode()
-        decodedMsg = Message.decode(encodedMsg)
-        self.assertIsNot(decodedMsg, None)
-
-        self.assertTrue(isinstance(decodedMsg, Message))
-        self.assertTrue(isinstance(decodedMsg, Request))
-        self.assertTrue(isinstance(decodedMsg, LoginRequest))
-        self.assertTrue(isinstance(decodedMsg, ClientLoginRequest))
-
-        self.assertEqual(decodedMsg.conversationId, convId)
-        self.assertEqual(decodedMsg.messageId, msgId)
-
-        self.assertEqual(decodedMsg.processType, 'ClientProcess')
-        self.assertEqual(decodedMsg.processLabel, 'label')
-        self.assertEqual(decodedMsg.identity, 'clientId')
-        self.assertEqual(decodedMsg.username, 'shemarama')
-        self.assertEqual(decodedMsg.password, 'password123')
-
-    def testLoginRequestEncodingDecoding(self):
-        msg = LoginRequest('StatisticsServer','label','someId')
-        self.assertIsNot(msg, None)
-        self.assertEqual(msg.processType, 'StatisticsServer')
-        self.assertEqual(msg.processLabel, 'label')
-        self.assertEqual(msg.identity, 'someId')
-
-
-        msgId = msg.messageId
-        convId = msg.conversationId
-
-        encodedMsg = msg.encode()
-        decodedMsg = Message.decode(encodedMsg)
-        self.assertIsNot(decodedMsg, None)
-
-        self.assertTrue(isinstance(decodedMsg, Message))
-        self.assertTrue(isinstance(decodedMsg, Request))
-        self.assertTrue(isinstance(decodedMsg, LoginRequest))
-
-        self.assertEqual(decodedMsg.conversationId, convId)
-        self.assertEqual(decodedMsg.messageId, msgId)
-
-        self.assertEqual(decodedMsg.processType, 'StatisticsServer')
-        self.assertEqual(decodedMsg.processLabel, 'label')
-        self.assertEqual(decodedMsg.identity, 'someId')
-
     def testRawQueryRequestEncodingDecoding(self):
         timePeriod = DateRange(date(2017, 5, 25), date(2017, 6, 30))
         cameras = ['1', '126', '6']
@@ -500,10 +360,9 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.cameras[2], '6')
 
     def testRegisterRequestEncodingDecoding(self):
-        msg = RegisterRequest('someId')
+        msg = RegisterRequest(ProcessType.MainServer)
         self.assertIsNot(msg, None)
-        self.assertEqual(msg.identity, 'someId')
-
+        self.assertEqual(msg.processType, ProcessType.MainServer)
 
         msgId = msg.messageId
         convId = msg.conversationId
@@ -518,21 +377,21 @@ class TestMessages(unittest.TestCase):
 
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
-        self.assertEqual(decodedMsg.identity, 'someId')
+        self.assertEqual(decodedMsg.processType, ProcessType.MainServer)
 
     def testSaveMotionRequestEncodingDecoding(self):
         picture = np.array([[0, 255], [255, 0]], np.uint8)
         timeStamp = datetime.now()
         pictureInfo = PictureInfo(picture, timeStamp, 1, 2)
-        msg = SaveMotionRequest(pictureInfo)
+        msg = SaveMotionRequest(pictureInfo, 'Ya boi Shem')
         self.assertIsNot(msg, None)
+        self.assertEqual(msg.cameraName, 'Ya boi Shem')
 
         self.assertIsNot(msg.pictureInfo, None)
         self.assertTrue(np.array_equal(msg.pictureInfo.picture, np.array([[0, 255], [255, 0]], np.uint8)))
         self.assertEqual(msg.pictureInfo.timeStamp, timeStamp)
         self.assertEqual(msg.pictureInfo.cameraId, 1)
         self.assertEqual(msg.pictureInfo.clusterId, 2)
-
 
         msgId = msg.messageId
         convId = msg.conversationId
@@ -568,33 +427,6 @@ class TestMessages(unittest.TestCase):
         self.assertTrue(isinstance(decodedMsg, ServerListRequest))
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
-
-    def testServerLoginRequestEncodingDecoding(self):
-        msg = ServerLoginRequest('MainServer','label','someId')
-        self.assertIsNot(msg, None)
-        self.assertEqual(msg.processType, 'MainServer')
-        self.assertEqual(msg.processLabel, 'label')
-        self.assertEqual(msg.identity, 'someId')
-
-
-        msgId = msg.messageId
-        convId = msg.conversationId
-
-        encodedMsg = msg.encode()
-        decodedMsg = Message.decode(encodedMsg)
-        self.assertIsNot(decodedMsg, None)
-
-        self.assertTrue(isinstance(decodedMsg, Message))
-        self.assertTrue(isinstance(decodedMsg, Request))
-        self.assertTrue(isinstance(decodedMsg, LoginRequest))
-        self.assertTrue(isinstance(decodedMsg, ServerLoginRequest))
-
-        self.assertEqual(decodedMsg.conversationId, convId)
-        self.assertEqual(decodedMsg.messageId, msgId)
-
-        self.assertEqual(decodedMsg.processType, 'MainServer')
-        self.assertEqual(decodedMsg.processLabel, 'label')
-        self.assertEqual(decodedMsg.identity, 'someId')
 
     def testStatisticsRequestEncodingDecoding(self):
         timePeriod = DateRange(date(2017,1,31),date(2017,9,1))
