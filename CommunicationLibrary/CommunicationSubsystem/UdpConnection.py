@@ -23,8 +23,8 @@ class UdpConnection:
     def __sendMessage(self, udpSocket, envelope):
         encodedMessage = envelope.message.encode()
         try:
-            # print "Sending message", envelope.message, " to ", \
-            #     envelope.endpoint
+            print "Sending message", envelope.message, " to ", \
+                envelope.endpoint
             logging.debug("Sending message " + repr(envelope.message) \
                 + " to " + repr(envelope.endpoint))
             udpSocket.sendto(encodedMessage, envelope.endpoint)
@@ -59,6 +59,7 @@ class UdpConnection:
 
             # If there is a message waiting to be sent, send it
             if not self.outgoingMessageQueue.empty():
+                print "There are messages to be sent"
                 logging.info("There are messages to be sent on queue")
                 self.__sendMessage(udpSocket, self.outgoingMessageQueue.get())
 

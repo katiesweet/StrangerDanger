@@ -60,10 +60,10 @@ class BaseConversation(object):
     def sendNewMessage(self, envelope):
         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
         # QUESTION am I guaranteed an envelope here or should I check for one and construct one if they don't have one?
-        m_type, is_last = self.getCurrentMessage
+        m_type, is_last = self.getCurrentMessage()
         if isinstance(envelope.message, m_type):
             if self.checkOffMessage(m_type):
-                self.myOutgoingMessageQueue.put(message)
+                self.myOutgoingMessageQueue.put(envelope)
                 # if is_last:
                     # self destruct on is_last or archive or something?
                 return True
