@@ -42,7 +42,12 @@ class ConversationManager:
         convoId = str(envelope.message.conversationId)
         logging.debug("Creating conversation with conversationId " + \
             repr(convoId))
-        self.conversations[convoId] = self.conversationFactory.create_conversation(envelope, envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue)
+        self.conversations[convoId] = self.conversationFactory.create_conversation(envelope, envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue, self.deleteConversation)
+
+    def deleteConversation(self, conversationId):
+        if str(conversationId) in self.conversations:
+            logging.info("deleting conversation {0}".format(conversationId))
+            self.conversations.remove(conversationId)
 
     def __run(self):
         while self.shouldRun:

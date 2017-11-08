@@ -11,7 +11,7 @@ class Message:
         self.messageId = messageId
         self.conversationId = copy.deepcopy(messageId)
 
-    def setConversationId(conversationId):
+    def setConversationId(self, conversationId):
         self.conversationId = conversationId
 
     def setMessageIdConversationId(self, messageId, conversationId):
