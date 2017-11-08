@@ -1,5 +1,6 @@
 import Queue
 import thread
+import logging
 
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
@@ -65,6 +66,7 @@ class BaseConversation(object):
         m_type, is_last = self.getCurrentMessage()
         if isinstance(envelope.message, m_type):
             if self.checkOffMessage(m_type):
+                logging.debug("sending message of {0} type".format(m_type))
                 self.myOutgoingMessageQueue.put(envelope)
                 if is_last and self.destructFunc:
                     self.destructFunc(envelope.message.conversationId)
@@ -76,6 +78,7 @@ class BaseConversation(object):
         m_type, is_last = self.getCurrentMessage()
         if isinstance(envelope.message, m_type):
             if self.checkOffMessage(m_type):
+                logging.debug("received message of {0} type".format(m_type))
                 if self.should_handle(m_type, is_last):
                     self.handle(m_type, envelope)
                 else:
@@ -104,6 +107,7 @@ class RegistrationConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(RegistrationConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created RegistrationConversation")
         return
 
     def __str__(self):
@@ -123,6 +127,7 @@ class SubscribeConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(SubscribeConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created SubscribeConversation")
         return
 
     def __str__(self):
@@ -140,6 +145,7 @@ class RequestStatisticsConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(RequestStatisticsConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created RequestStatisticsConversation")
         return
 
     def __str__(self):
@@ -172,6 +178,7 @@ class RawDataQueryConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(RawDataQueryConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created RawDataQueryConversation")
         return
 
     def __str__(self):
@@ -191,6 +198,7 @@ class SyncDataConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(SyncDataConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created SyncDataConversation")
         return
 
     def __str__(self):
@@ -208,6 +216,7 @@ class MainServerListConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(MainServerListConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created MainServerListConversation")
         return
 
     def __str__(self):
@@ -239,6 +248,7 @@ class CalculateStatsConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(CalculateStatsConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created CalculateStatsConversation")
         return
 
     def __str__(self):
@@ -253,6 +263,7 @@ class TransferMotionImageConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(TransferMotionImageConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created TransferMotionImageConversation")
         return
 
     def __str__(self):
@@ -272,6 +283,7 @@ class GetStatusConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         super(GetStatusConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created GetStatusConversation")
         return
 
     def __str__(self):
