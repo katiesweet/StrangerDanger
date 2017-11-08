@@ -64,13 +64,14 @@ class BaseConversation(object):
     def sendNewMessage(self, envelope):
         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
         m_type, is_last = self.getCurrentMessage()
-        if isinstance(envelope.message, m_type):
-            if self.checkOffMessage(m_type):
-                logging.debug("sending message of {0} type".format(m_type))
-                self.myOutgoingMessageQueue.put(envelope)
-                if is_last and self.destructFunc:
-                    self.destructFunc(envelope.message.conversationId)
-                return True
+        if m_type: # if m_type is None, there is not another message to send in the protocol
+            if isinstance(envelope.message, m_type):
+                if self.checkOffMessage(m_type):
+                    logging.debug("sending message of {0} type".format(m_type))
+                    self.myOutgoingMessageQueue.put(envelope)
+                    if is_last and self.destructFunc:
+                        self.destructFunc(envelope.message.conversationId)
+                    return True
         return False
 
     def receivedNewMessage(self, envelope):
