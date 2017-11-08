@@ -12,7 +12,7 @@ class ConversationManager:
         self.toSocketQueue = Queue.Queue() # Messages to be sent by socket
         self.fromSocketQueue = Queue.Queue() # Messages received by socket
 
-        self.udpSocket = UdpConnection.UdpConnection(self.toSocketQueue, self.fromSocketQueue, myEndpoint)
+        # self.udpSocket = UdpConnection.UdpConnection(self.toSocketQueue, self.fromSocketQueue, myEndpoint)
 
         self.conversationFactory = Conversation.ConversationFactory()
 
@@ -42,17 +42,22 @@ class ConversationManager:
         convoId = str(envelope.message.conversationId)
         logging.debug("Creating conversation with conversationId " + \
             repr(convoId))
-        self.conversations[convoId] = self.conversationFactory.create_conversation(envelope, envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue)
+        self.conversations[convoId] = self.conversationFactory.create_conversation(envelope, envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue, self.deleteConversation)
+
+    def deleteConversation(self, conversationId):
+        if str(conversationId) in self.conversations:
+            self.conversations.remove(conversationId)
 
     def __run(self):
         while self.shouldRun:
-            if not self.fromSocketQueue.empty():
-                envelope = self.fromSocketQueue.get()
-                logging.debug("Received envelope from socket with messageId " \
-                    +  repr(envelope.message.messageId))
-
-                conversationId = str(envelope.message.conversationId)
-                if conversationId in self.conversations:
-                   self.conversations[conversationId].receivedNewMessage(envelope)
-                else:
-                   self.__createConversation(envelope, envelopeIsOutgoing=False)
+            continue
+            # if not self.fromSocketQueue.empty():
+            #     envelope = self.fromSocketQueue.get()
+            #     logging.debug("Received envelope from socket with messageId " \
+            #         +  repr(envelope.message.messageId))
+            #
+            #     conversationId = str(envelope.message.conversationId)
+            #     if conversationId in self.conversations:
+            #        self.conversations[conversationId].receivedNewMessage(envelope)
+            #     else:
+            #        self.__createConversation(envelope, envelopeIsOutgoing=False)
