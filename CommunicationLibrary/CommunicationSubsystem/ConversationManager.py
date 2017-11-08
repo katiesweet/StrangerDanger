@@ -12,7 +12,7 @@ class ConversationManager:
         self.toSocketQueue = Queue.Queue() # Messages to be sent by socket
         self.fromSocketQueue = Queue.Queue() # Messages received by socket
 
-        # self.udpSocket = UdpConnection.UdpConnection(self.toSocketQueue, self.fromSocketQueue, myEndpoint)
+        self.udpSocket = UdpConnection.UdpConnection(self.toSocketQueue, self.fromSocketQueue, myEndpoint)
 
         self.conversationFactory = Conversation.ConversationFactory()
 
