@@ -15,13 +15,10 @@ class BaseConversation(object):
         self.myOutgoingMessageQueue = Queue.Queue()
         self.myIncomingMessageQueue = Queue.Queue()
 
-        # self.checkOffMessage(self.initiation_message)
         if envelopeIsOutgoing:
             self.sendNewMessage(envelope)
-            # self.myOutgoingMessageQueue.put(envelope)
         else:
             self.receivedNewMessage(envelope)
-            # self.myIncomingMessageQueue.put(envelope)
 
         self.shouldRun = True
         thread.start_new_thread(self.__run, ())
@@ -54,13 +51,14 @@ class BaseConversation(object):
 
     def handle(self, m_type, prev_envelope):
         # can be overridden in the subclass or to added to still call super()
-        envelope = None
+        message = None
         if m_type == AliveRequest:
             message = AliveReply(True)
+        if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
-        if envelope:
-            self.sendNewMessage(envelope)
+            if envelope:
+                self.sendNewMessage(envelope)
 
     def sendNewMessage(self, envelope):
         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
