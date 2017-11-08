@@ -151,6 +151,21 @@ class CommunicationSubsystem_Test(unittest.TestCase):
         pro = [pro for pro in convo.protocol if pro['type'] == type(reply_m)]
         self.assertTrue(pro[0]['status'])
 
+    def test_protocol_convo_reieves_invalid_message(self):
+        cf = ConversationFactory()
+        r_message = RegisterRequest("test")
+        env = Envelope(message=r_message, endpoint='endpoint')
+        is_outgoing = True
+        convo = cf.create_conversation(env, is_outgoing, Queue.Queue(), Queue.Queue(), None)
+        reply_s = ServerListRequest()
+        env2 = Envelope(message=reply_s, endpoint='endpoint')
+        pro = [pro for pro in convo.protocol if pro['status'] == False]
+        prev_length = len(pro)
+        convo.receivedNewMessage(env2)
+        pro2 = [pro for pro in convo.protocol if pro['status'] == False]
+        current_length = len(pro2)
+        self.assertEqual(prev_length, current_length)
+
     def test_convo_handles(self):
         cf = ConversationFactory()
         a_message = AliveRequest()
