@@ -47,7 +47,10 @@ class ConversationManager:
     def deleteConversation(self, conversationId):
         if str(conversationId) in self.conversations:
             logging.info("deleting conversation {0}".format(conversationId))
-            self.conversations.remove(conversationId)
+            try:
+                self.conversations.pop(str(conversationId))
+            except:
+                logging.error("Cannot delete conversation " + str(conversationId) + ". Does not exist.")
 
     def __run(self):
         while self.shouldRun:
