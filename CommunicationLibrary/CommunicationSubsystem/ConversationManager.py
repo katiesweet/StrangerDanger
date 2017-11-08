@@ -50,14 +50,13 @@ class ConversationManager:
 
     def __run(self):
         while self.shouldRun:
-            continue
-            # if not self.fromSocketQueue.empty():
-            #     envelope = self.fromSocketQueue.get()
-            #     logging.debug("Received envelope from socket with messageId " \
-            #         +  repr(envelope.message.messageId))
-            #
-            #     conversationId = str(envelope.message.conversationId)
-            #     if conversationId in self.conversations:
-            #        self.conversations[conversationId].receivedNewMessage(envelope)
-            #     else:
-            #        self.__createConversation(envelope, envelopeIsOutgoing=False)
+            if not self.fromSocketQueue.empty():
+                envelope = self.fromSocketQueue.get()
+                logging.debug("Received envelope from socket with messageId " \
+                    +  repr(envelope.message.messageId))
+
+                conversationId = str(envelope.message.conversationId)
+                if conversationId in self.conversations:
+                   self.conversations[conversationId].receivedNewMessage(envelope)
+                else:
+                   self.__createConversation(envelope, envelopeIsOutgoing=False)
