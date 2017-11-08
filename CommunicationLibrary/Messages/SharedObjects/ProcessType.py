@@ -2,7 +2,7 @@
 from enum import Enum, unique
 
 @unique
-class ProcessType(object):
+class ProcessType(Enum):
     Registry = 1
     MainServer = 2
     StatisticsServer = 3
