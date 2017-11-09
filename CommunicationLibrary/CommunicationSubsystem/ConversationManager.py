@@ -30,7 +30,6 @@ class ConversationManager:
 
     def sendMessage(self, envelope):
         """Called by Communication Protocol when the application layer wants to send a new message."""
-        #self.toSocketQueue.put(envelope)
         convoId = str(envelope.message.conversationId)
         if convoId in self.conversations:
             self.conversations[convoId].sendNewMessage(envelope)

@@ -24,10 +24,11 @@ class CommunicationSubsystem_Test(unittest.TestCase):
         self.assertEqual(getMessageResponse[0], False)
         self.assertEqual(getMessageResponse[1], "")
 
-        commSub.fromConversationQueue.put("TestMessage")
+        envelope = Envelope(('localhost', 50000), AliveRequest())
+        commSub.fromConversationQueue.put(envelope)
         getMessageResponse = commSub.getMessage()
         self.assertEqual(getMessageResponse[0], True)
-        self.assertEqual(getMessageResponse[1], "TestMessage")
+        self.assertEqual(getMessageResponse[1], envelope)
 
         getMessageResponse = commSub.getMessage()
         self.assertEqual(getMessageResponse[0], False)
@@ -56,11 +57,21 @@ class CommunicationSubsystem_Test(unittest.TestCase):
     def test_ConversationManager__SendMessage(self):
         endpoint = ('localhost', 0)
         fromQueue = Queue.Queue()
-
         connMan = ConversationManager.ConversationManager(fromQueue, endpoint, False)
-        envelope = Envelope(('localhost', 50000), "TestMessage")
+
+        class Conversation:
+            def __init__(self,):
+                pass
+            def sendNewMessage(self,envelope):
+                self.envelope = envelope
+
+        connMan.conversations["Test"] = Conversation()
+        envelope = Envelope(('localhost', 50000), AliveRequest())
+        envelope.message.setConversationId("Test")
+
         connMan.sendMessage(envelope)
-        self.assertEqual(connMan.toSocketQueue.qsize(), 1)
+        self.assertEqual(connMan.conversations["Test"].envelope, envelope)
+
 
     ######## UdpConnection #############
     def test_UdpConnection_Constructor(self):
