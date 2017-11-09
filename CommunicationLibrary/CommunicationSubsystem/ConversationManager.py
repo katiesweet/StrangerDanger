@@ -47,7 +47,7 @@ class ConversationManager:
     def deleteConversation(self, conversationId):
         if str(conversationId) in self.conversations:
             logging.info("deleting conversation {0}".format(conversationId))
-            self.conversations.remove(conversationId)
+            del self.conversations[str(conversationId)]
 
     def __run(self):
         while self.shouldRun:

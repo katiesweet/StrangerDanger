@@ -24,6 +24,7 @@ class BaseConversation(object):
         self.shouldRun = True
         thread.start_new_thread(self.__run, ())
 
+
     def checkOffMessage(self, m_type):
         unfinished_messages = [pro for pro in self.protocol if pro['status'] == False]
         if len(unfinished_messages) > 0:
@@ -77,16 +78,17 @@ class BaseConversation(object):
     def receivedNewMessage(self, envelope):
         """Called from conversation manager for when a socket receives a message intended for this conversation. """
         m_type, is_last = self.getCurrentMessage()
-        if isinstance(envelope.message, m_type):
-            if self.checkOffMessage(m_type):
-                logging.debug("received message of {0} type".format(m_type))
-                if self.should_handle(m_type, is_last):
-                    self.handle(m_type, envelope)
-                else:
-                    self.myIncomingMessageQueue.put(envelope)
-                if is_last and self.destructFunc:
-                    self.destructFunc(envelope.message.conversationId)
-                return True
+        if m_type:
+            if isinstance(envelope.message, m_type):
+                if self.checkOffMessage(m_type):
+                    logging.debug("received message of {0} type".format(m_type))
+                    if self.should_handle(m_type, is_last):
+                        self.handle(m_type, envelope)
+                    else:
+                        self.myIncomingMessageQueue.put(envelope)
+                    if is_last and self.destructFunc:
+                        self.destructFunc(envelope.message.conversationId)
+                    return True
         return False
 
     def __run(self):
@@ -103,13 +105,16 @@ class BaseConversation(object):
 class RegistrationConversation(BaseConversation):
     initiation_message = RegisterRequest
     initiated = None
-    protocol = [{'type': RegisterRequest, 'status': False},
-                {'type': RegisterReply, 'status': False}]
-
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = self.createProtocol()
         super(RegistrationConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created RegistrationConversation")
         return
+
+    def createProtocol(self):
+        protocol = [{'type': RegisterRequest, 'status': False},
+                    {'type': RegisterReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'RegistrationConversation'
@@ -123,13 +128,17 @@ class RegistrationConversation(BaseConversation):
 class SubscribeConversation(BaseConversation):
     initiation_message = SubscribeRequest
     initiated = None
-    protocol = [{'type': SubscribeRequest, 'status': False},
-                {'type': AckReply, 'status': False}]
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = self.createProtocol()
         super(SubscribeConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created SubscribeConversation")
         return
+
+    def createProtocol(self):
+        protocol = [{'type': SubscribeRequest, 'status': False},
+                    {'type': AckReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'SubscribeConversation'
@@ -145,6 +154,7 @@ class RequestStatisticsConversation(BaseConversation):
     initiated = None
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = self.createProtocol()
         super(RequestStatisticsConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created RequestStatisticsConversation")
         return
@@ -154,17 +164,23 @@ class RequestStatisticsConversation(BaseConversation):
 
 class InitiatedRequestStatisticsConversation(RequestStatisticsConversation):
     initiated = True
-    protocol = [{'type': StatisticsRequest, 'status': False},
-                {'type': StatisticsReply, 'status': False}]
+
+    def createProtocol(self):
+        protocol = [{'type': StatisticsRequest, 'status': False},
+                    {'type': StatisticsReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'InitiatedRequestStatisticsConversation'
 
 class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
     initiated = False
-    protocol = [{'type': StatisticsRequest, 'status': False},
-                # heartbeats
-                {'type': CalcStatisticsRequest, 'status': False}]
+
+    def createProtocol(self):
+        protocol = [{'type': StatisticsRequest, 'status': False},
+                    # heartbeats
+                    {'type': CalcStatisticsRequest, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'ReceivedRequestStatisticsConversation'
@@ -173,14 +189,18 @@ class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
 class RawDataQueryConversation(BaseConversation):
     initiation_message = RawQueryRequest
     initiated = None
-    protocol = [{'type': RawQueryRequest, 'status': False},
-                # hearbeats
-                {'type': RawQueryReply, 'status': False}]
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = self.createProtocol()
         super(RawDataQueryConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created RawDataQueryConversation")
         return
+
+    def createProtocol(self):
+        protocol = [{'type': RawQueryRequest, 'status': False},
+                    # hearbeats
+                    {'type': RawQueryReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'RawDataQueryConversation'
@@ -194,13 +214,17 @@ class RawDataQueryConversation(BaseConversation):
 class SyncDataConversation(BaseConversation):
     initiation_message = SyncDataRequest
     initiated = None
-    protocol = [{'type': SyncDataRequest, 'status': False},
-                {'type': SyncDataReply, 'status': False}]
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = self.createProtocol()
         super(SyncDataConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created SyncDataConversation")
         return
+
+    def createProtocol(self):
+        protocol = [{'type': SyncDataRequest, 'status': False},
+                    {'type': SyncDataReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'SyncDataConversation'
@@ -216,6 +240,7 @@ class MainServerListConversation(BaseConversation):
     initiated = None
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = self.createProtocol()
         super(MainServerListConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created MainServerListConversation")
         return
@@ -225,16 +250,22 @@ class MainServerListConversation(BaseConversation):
 
 class InitiatedMainServerListConversation(MainServerListConversation):
     initiated = True
-    protocol = [{'type': ServerListRequest, 'status': False},
-                {'type': ServerListReply, 'status': False}]
+
+    def createProtocol(self):
+        protocol = [{'type': ServerListRequest, 'status': False},
+                    {'type': ServerListReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'InitiatedMainServerListConversation'
 
 class ReceivedMainServerListConversation(MainServerListConversation):
     initiated = False
-    protocol = [{'type': ServerListRequest, 'status': False},
-                {'type': ServerListReply, 'status': False}]
+
+    def createProtocol(self):
+        protocol = [{'type': ServerListRequest, 'status': False},
+                    {'type': ServerListReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'ReceivedMainServerListConversation'
@@ -243,14 +274,18 @@ class ReceivedMainServerListConversation(MainServerListConversation):
 class CalculateStatsConversation(BaseConversation):
     initiation_message = CalcStatisticsRequest
     initiated = None # this conversation will only ever be received however
-    protocol = [{'type': CalcStatisticsRequest, 'status': False},
-                # heartbeats
-                {'type': StatisticsReply, 'status': False}]
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = createProtocol()
         super(CalculateStatsConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created CalculateStatsConversation")
         return
+
+    def createProtocol(self):
+        protocol = [{'type': CalcStatisticsRequest, 'status': False},
+                    # heartbeats
+                    {'type': StatisticsReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'CalculateStatsConversation'
@@ -259,13 +294,17 @@ class CalculateStatsConversation(BaseConversation):
 class TransferMotionImageConversation(BaseConversation):
     initiation_message = SaveMotionRequest
     initiated = None
-    protocol = [{'type': SaveMotionRequest, 'status': False},
-                {'type': MotionDetectedReply, 'status': False}]
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = createProtocol()
         super(TransferMotionImageConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created TransferMotionImageConversation")
         return
+
+    def createProtocol(self):
+        protocol = [{'type': SaveMotionRequest, 'status': False},
+                    {'type': MotionDetectedReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'TransferMotionImageConversation'
@@ -279,13 +318,17 @@ class TransferMotionImageConversation(BaseConversation):
 class GetStatusConversation(BaseConversation):
     initiation_message = AliveRequest
     initiated = None
-    protocol = [{'type': AliveRequest, 'status': False},
-                {'type': AliveReply, 'status': False}]
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = self.createProtocol()
         super(GetStatusConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created GetStatusConversation")
         return
+
+    def createProtocol(self):
+        protocol = [{'type': AliveRequest, 'status': False},
+                    {'type': AliveReply, 'status': False}]
+        return protocol
 
     def __str__(self):
         return 'GetStatusConversation'
