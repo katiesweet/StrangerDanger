@@ -1,4 +1,5 @@
 import sys
+import thread
 import threading
 sys.path.append('../') # Start at root directory for all imports
 
@@ -9,6 +10,8 @@ logging.basicConfig(filename="Registry.log", level=logging.DEBUG, \
 
 from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 from CommunicationLibrary.Messages.ReplyMessages import *
+from CommunicationLibrary.Messages.RequestMessages import *
+
 from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
 
 class Registry:
@@ -17,20 +20,27 @@ class Registry:
 
     def __init__(self):
         logging.info("Creating registry process")
-        myEndpoint = ('localhost', 50000)
+        myEndpoint = ('', 50000)
         self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)
         self.shouldRun = True
-        self.__handleIncomingMessages()
+        thread.start_new_thread(self.__handleIncomingMessages,())
         var = raw_input("Enter something to quit.\n")
+        self.shouldRun = False
 
 
     def __handleIncomingMessages(self):
         while self.shouldRun:
             hasMessage, message = self.comm.getMessage()
             if hasMessage:
-                message = Envelope(message.endpoint, RegisterReply(True, Registry.getNextProcessId()))
-                self.comm.sendMessage(message)
-                self.shouldRun = False
+                self.__processNewMessage(message)
+
+    def __processNewMessage(self, envelope):
+        if isinstance(envelope.message, RegisterRequest):
+            self.__sendRegisterResponseMessage(envelope)
+
+    def __sendRegisterResponseMessage(self, envelope):
+        message = Envelope(envelope.endpoint, RegisterReply(True, Registry.getNextProcessId()))
+        self.comm.sendMessage(message)
 
     @staticmethod
     def getNextProcessId():

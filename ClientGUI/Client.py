@@ -1,5 +1,6 @@
 import sys
 sys.path.append('../')
+from Tkinter import *
 
 import logging
 logging.basicConfig(filename="Client.log", level=logging.DEBUG, \
@@ -8,25 +9,68 @@ logging.basicConfig(filename="Client.log", level=logging.DEBUG, \
 
 from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 from CommunicationLibrary.Messages.RequestMessages import * # AliveRequest
-from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
-from CommunicationLibrary.Messages.SharedObjects.ProcessType import ProcessType
+from CommunicationLibrary.Messages.ReplyMessages import *
+# from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
+# from CommunicationLibrary.Messages.SharedObjects.ProcessType import ProcessType
+from CommunicationLibrary.Messages.SharedObjects import *
 
 class Client:
-    def __init__(self):
+    def __init__(self, master):
         logging.info("Creating client process")
-        comm = CommunicationSubsystem.CommunicationSubsystem()
-        registrationServer = ('localhost', 50000)
+        self.master = master
+        master.title("Client")
+        self.comm = CommunicationSubsystem.CommunicationSubsystem()
+        self.registrationServerAddress = ("34.209.72.192" , 50000)
+        self.mainServerAddress = (None, None)
+        self.canStartSending = False
 
-        # for i in range(3):
-        #     message = Envelope(registrationServer, AliveRequest())
-        #     comm.sendMessage(message)
-        #     logging.debug("Sending message " + repr(message))
+        self.sendRegisterRequest()
+        self.checkForMessagesPeriodically()
 
-        message = Envelope(registrationServer, RegisterRequest(ProcessType.ClientProcess))
-        comm.sendMessage(message)
+        #self.sendServerListRequest()
+
+    ###### Messages Client Needs to Send #####
+    def sendRegisterRequest(self):
+        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.ClientProcess))
+        self.comm.sendMessage(message)
         logging.debug("Sending message " + repr(message))
 
-        var = raw_input("Enter something to quit.\n")
+    def sendServerListRequest(self):
+        if not self.canStartSending:
+            self.master.after(50, self.sendServerListRequest)
+        else:
+            envelope = Envelope(self.registrationServerAddress, ServerListRequest())
+            self.comm.sendMessage(envelope)
+            logging.debug("Sending message " + repr(envelope))
+
+    def sendStatisticsRequest(self):
+        """ Message user sends when they want statistics -> button click handler? """
+        if self.mainServerAddress == (None, None):
+            print "No main server to send to. Please try again later"
+        else:
+            print "Message not implemented yet"
+
+    def checkForMessagesPeriodically(self):
+        try:
+            haveMessage, envelope = self.comm.getMessage()
+            if haveMessage:
+                self.processNewMessage(envelope)
+            self.master.after(50, self.checkForMessagesPeriodically)
+        except:
+            return
+
+    def processNewMessage(self, envelope):
+        if isinstance(envelope.message, RegisterReply):
+            self.handleRegisterReply(envelope)
+
+    def handleRegisterReply(self, envelope):
+        processId = envelope.message.processId
+
+        LocalProcessInfo.setProcessId(processId)
+        Label(self.master, text="Process Id: " + str(processId)).grid(row=1, column=1)
+        self.canStartSending = True
 
 if __name__ == '__main__':
-    Client()
+    root = Tk()
+    client = Client(root)
+    root.mainloop()

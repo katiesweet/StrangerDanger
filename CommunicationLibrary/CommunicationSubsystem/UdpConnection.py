@@ -28,8 +28,9 @@ class UdpConnection:
             logging.debug("Sending message " + repr(envelope.message) \
                 + " to " + repr(envelope.endpoint))
             udpSocket.sendto(encodedMessage, envelope.endpoint)
-        except:
+        except socket.error, msg:
             logging.error("Could not send message to server.")
+            print socket.error, msg
 
     def __receiveMessage(self, udpSocket):
         try:
@@ -59,7 +60,6 @@ class UdpConnection:
 
             # If there is a message waiting to be sent, send it
             if not self.outgoingMessageQueue.empty():
-                print "There are messages to be sent"
                 logging.info("There are messages to be sent on queue")
                 self.__sendMessage(udpSocket, self.outgoingMessageQueue.get())
 

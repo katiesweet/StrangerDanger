@@ -30,7 +30,6 @@ class ConversationManager:
 
     def sendMessage(self, envelope):
         """Called by Communication Protocol when the application layer wants to send a new message."""
-        #self.toSocketQueue.put(envelope)
         convoId = str(envelope.message.conversationId)
         if convoId in self.conversations:
             self.conversations[convoId].sendNewMessage(envelope)
@@ -42,7 +41,15 @@ class ConversationManager:
         convoId = str(envelope.message.conversationId)
         logging.debug("Creating conversation with conversationId " + \
             repr(convoId))
-        self.conversations[convoId] = self.conversationFactory.create_conversation(envelope, envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue)
+        self.conversations[convoId] = self.conversationFactory.create_conversation(envelope, envelopeIsOutgoing, self.toSocketQueue, self.fromConversationQueue, self.deleteConversation)
+
+    def deleteConversation(self, conversationId):
+        if str(conversationId) in self.conversations:
+            logging.info("deleting conversation {0}".format(conversationId))
+            try:
+                self.conversations.pop(str(conversationId))
+            except:
+                logging.error("Cannot delete conversation " + str(conversationId) + ". Does not exist.")
 
     def __run(self):
         while self.shouldRun:

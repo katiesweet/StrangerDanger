@@ -4,7 +4,7 @@ import logging
 
 class CommunicationSubsystem :
     """Application Level Communication Protocol Manager"""
-    def __init__(self, myEndpoint = ('localhost', 0)):
+    def __init__(self, myEndpoint = ("", 0)):
         logging.info("Creating communication subsystem with endpoint " + \
             repr(myEndpoint))
         self.fromConversationQueue = Queue.Queue()
