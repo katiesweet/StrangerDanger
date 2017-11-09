@@ -20,13 +20,15 @@ class Client:
         self.master = master
         master.title("Client")
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
+        #self.registrationServerAddress = ("34.209.72.192" , 50000)
+
         self.registrationServerAddress = ('localhost', 50001)
         self.mainServerAddress = (None, None)
         self.canStartSending = False
 
         self.sendRegisterRequest()
         self.checkForMessagesPeriodically()
-        
+
         #self.sendServerListRequest()
 
     ###### Messages Client Needs to Send #####
