@@ -72,6 +72,16 @@ class CommunicationSubsystem_Test(unittest.TestCase):
         connMan.sendMessage(envelope)
         self.assertEqual(connMan.conversations["Test"].envelope, envelope)
 
+    def test_ConversationManager__DeleteConversation(self):
+        endpoint = ('localhost', 0)
+        fromQueue = Queue.Queue()
+        connMan = ConversationManager.ConversationManager(fromQueue, endpoint)
+
+        self.assertEqual(connMan.conversations, {})
+        connMan.conversations["Test"] = "TestConversation"
+        self.assertEqual(connMan.conversations, {"Test": "TestConversation"})
+        connMan.deleteConversation("Test")
+        self.assertEqual(connMan.conversations, {})
 
     ######## UdpConnection #############
     def test_UdpConnection_Constructor(self):
