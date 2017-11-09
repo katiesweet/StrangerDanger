@@ -20,7 +20,7 @@ class Registry:
 
     def __init__(self):
         logging.info("Creating registry process")
-        myEndpoint = ('localhost', 50001)
+        myEndpoint = ('', 50000)
         self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)
         self.shouldRun = True
         thread.start_new_thread(self.__handleIncomingMessages,())
