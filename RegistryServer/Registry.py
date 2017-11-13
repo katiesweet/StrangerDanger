@@ -1,6 +1,7 @@
 import sys
 import thread
 import threading
+import copy
 sys.path.append('../') # Start at root directory for all imports
 
 import logging
@@ -12,7 +13,7 @@ from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
 
-from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
+from CommunicationLibrary.Messages.SharedObjects import *
 
 class Registry:
     nextProcessId = 0
@@ -20,13 +21,13 @@ class Registry:
 
     def __init__(self):
         logging.info("Creating registry process")
-        myEndpoint = ('', 50000)
+        myEndpoint = ('', 50000) # Good for both local and external connections
         self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)
         self.shouldRun = True
+        self.knownMainServers = []
         thread.start_new_thread(self.__handleIncomingMessages,())
         var = raw_input("Enter something to quit.\n")
         self.shouldRun = False
-
 
     def __handleIncomingMessages(self):
         while self.shouldRun:
@@ -36,11 +37,30 @@ class Registry:
 
     def __processNewMessage(self, envelope):
         if isinstance(envelope.message, RegisterRequest):
-            self.__sendRegisterResponseMessage(envelope)
+            self.__handleRegisterRequest(envelope)
+        elif isinstance(envelope.message, ServerListRequest):
+            self.__handleMainServerRequest(envelope)
 
-    def __sendRegisterResponseMessage(self, envelope):
-        message = Envelope(envelope.endpoint, RegisterReply(True, Registry.getNextProcessId()))
-        self.comm.sendMessage(message)
+    def __handleRegisterRequest(self, envelope):
+        processType = envelope.message.processType
+        if processType == ProcessType.MainServer:
+            self.knownMainServers.append(envelope.endpoint)
+            print self.knownMainServers
+
+        responseMessage = Envelope(envelope.endpoint, RegisterReply(True, Registry.getNextProcessId()))
+        self.comm.sendMessage(responseMessage)
+
+    def __handleMainServerRequest(self, envelope):
+        responseMessage = Envelope(envelope.endpoint, ServerListReply(True, copy.deepcopy(self.knownMainServers)))
+        self.comm.sendMessage(responseMessage)
+
+    def __handleAliveReponseOfMainServer(self, envelope):
+        # TODO: How do we handle this? How do we know when one DOESN'T respond? Probably needs to be addressed in the conversation.
+        return
+
+    def __pingMainServersPeriodically(self):
+        # TODO: Put lock around the self.knownMainServers array
+        return
 
     @staticmethod
     def getNextProcessId():
