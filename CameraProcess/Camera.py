@@ -17,6 +17,7 @@ import cv2
 import datetime
 import time
 import thread
+from threading import Thread
 import sys
 sys.path.append('../')
 
@@ -41,10 +42,16 @@ class Camera():
         self.canStartSending = False
 
         self.sendRegisterRequest()
-        thread.start_new_thread(self.checkForMessagesPeriodically,())
-        thread.start_new_thread(self.runVideoStream,())
-        while self.shouldRun:
-            pass
+        #thread.start_new_thread(self.checkForMessagesPeriodically,()).join()
+        #thread.start_new_thread(self.runVideoStream,()).join()
+        #while self.shouldRun:
+        #    pass
+        t1 = Thread(target=self.checkForMessagesPeriodically,args=())
+        t2 = Thread(target=self.runVideoStream,args=())
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
 
     def sendRegisterRequest(self):
         message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.CameraProcess))
