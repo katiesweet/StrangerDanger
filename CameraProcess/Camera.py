@@ -42,10 +42,6 @@ class Camera():
         self.canStartSending = False
 
         self.sendRegisterRequest()
-        #thread.start_new_thread(self.checkForMessagesPeriodically,()).join()
-        #thread.start_new_thread(self.runVideoStream,()).join()
-        #while self.shouldRun:
-        #    pass
         t1 = Thread(target=self.checkForMessagesPeriodically,args=())
         t2 = Thread(target=self.runVideoStream,args=())
         t1.start()
@@ -129,8 +125,8 @@ class Camera():
         return frame
 
     def handleIntruderDetected(self, frame):
-        print 'saving image'
-        cv2.imwrite('img.jpg', frame)
+        # send frame to main server list
+        self.sendSaveMotionRequest(("192.168.0.2",3000),frame)
 
 
     def checkForIntruders(self, frame, timestamp):
@@ -144,7 +140,7 @@ class Camera():
                 # check to see if the number of frames with consistent motion is
                 # high enough
                 if self.motionCounter >= self.conf["min_motion_frames"]:
-                    thread.start_new_thread(self.handleIntruderDetected,(frame,))
+                    Thread(target=self.handleIntruderDetected,args=(frame,)).start()
                     # update the last uploaded timestamp and reset the motion
                     # counter
                     self.lastUploaded = timestamp
