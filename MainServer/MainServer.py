@@ -4,6 +4,7 @@ sys.path.append('../')
 
 from threading import Thread
 import time
+import scipy.misc
 
 import logging
 logging.basicConfig(filename="MainServer.log", level=logging.DEBUG, \
@@ -40,6 +41,11 @@ class MainServer:
         self.comm.sendMessage(message)
         logging.debug("Sending message " + repr(message))
 
+    def sendMotionDetectedReply(self, cameraEndpoint, success):
+        message = Envelope(cameraEndpoint, MotionDetectedReply(success)
+        self.comm.sendMessage(message)
+        logging.debug("Sending MotionDetectedReply message " + repr(message))
+
     def __handleIncomingMessages(self):
         while self.shouldRun:
             hasMessage, message = self.comm.getMessage()
@@ -49,12 +55,23 @@ class MainServer:
     def __processNewMessage(self, envelope):
         if isinstance(envelope.message, RegisterReply):
             self.handleRegisterReply(envelope)
+        elif isinstance(envelope.message, SaveMotionRequest):
+            self.handleSaveMotionRequest(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
         LocalProcessInfo.setProcessId(processId)
         logging.info('Got ProcessID: {}'.format(processId))
         self.canStartSending = True
+
+    def handleSaveMotionRequest(self, envelope):
+        pictureInfo = envelope.message.pictureInfo
+        picture = pictureInfo.picture
+        timeStamp = pictureInfo.timeStamp
+        cameraName = pictureInfo.cameraName
+        print 'Saving picture from {} at {}'.format(cameraName, timeStamp)
+        scipy.misc.imsave('{}_{}.jpg'.format(cameraName, timeStamp))
+        self.sendMotionDetectedReply(envelope.endpoint, True)
 
 if __name__ == '__main__':
     MainServer()
