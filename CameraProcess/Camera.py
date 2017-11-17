@@ -34,36 +34,48 @@ from CommunicationLibrary.Messages.SharedObjects import *
 class Camera():
     def __init__(self):
         logging.info("Creating camera process")
-        self.shouldRun = True
-        self.comm = CommunicationSubsystem.CommunicationSubsystem()
-        self.registrationServerAddress = ("192.168.0.5", 50000)
-        #self.registrationServerAddress = ("34.209.72.192", 50000)
-        self.mainServerAddress = (None, None)
-        self.canStartSending = False
 
-        self.sendRegisterRequest()
-        t1 = Thread(target=self.checkForMessagesPeriodically,args=())
-        t2 = Thread(target=self.runVideoStream,args=())
-        t1.start()
-        t2.start()
-        t1.join()
-        t2.join()
+        try:
+            ap = argparse.ArgumentParser()
+            ap.add_argument("-n", "--name", required=True, help="unique name for camera")
+            ap.add_argument("-c", "--conf", required=True, help="path to the JSON configuration file")
+            self.args = vars(ap.parse_args())
+
+            self.shouldRun = True
+            self.comm = CommunicationSubsystem.CommunicationSubsystem()
+            #self.registrationServerAddress = ("192.168.0.5", 50000)
+            self.registrationServerAddress = ("34.209.66.116", 50000)
+            self.mainServerList = []
+            self.canStartSending = False
+
+            self.sendRegisterRequest()
+            t1 = Thread(target=self.checkForMessagesPeriodically,args=())
+            t2 = Thread(target=self.runVideoStream,args=())
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+        except:
+            pass
 
     def sendRegisterRequest(self):
         message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.CameraProcess))
         self.comm.sendMessage(message)
         logging.debug("Sending Register Request message " + repr(message))
 
-    def sendSaveMotionRequest(self, endpoint, frame):
-        message = Envelope(endpoint, SaveMotionRequest(frame))
+    def sendServerListRequest(self):
+        message = Envelope(self.registrationServerAddress, ServerListRequest())
+        self.comm.sendMessage(message)
+        logging.debug("Sending Server List Request message " + repr(message))
+
+    def sendSaveMotionRequest(self, endpoint, pictureInfo):
+        message = Envelope(endpoint, SaveMotionRequest(pictureInfo))
         self.comm.sendMessage(message)
         logging.debug("Sending Save Motion Request message " + repr(message))
 
     def setupCameraStream(self):
-        ap = argparse.ArgumentParser()
-        ap.add_argument("-c", "--conf", required=True, help="path to the JSON configuration file")
-        args = vars(ap.parse_args())
-        self.conf = json.load(open(args["conf"]))
+        self.name = self.args["name"]
+        self.conf = json.load(open(self.args["conf"]))
         
         # initialize the camera and grab a reference to the raw camera capture
         camera = PiCamera()
@@ -124,9 +136,11 @@ class Camera():
                 0.35, (0, 0, 255), 1)
         return frame
 
-    def handleIntruderDetected(self, frame):
-        # send frame to main server list
-        self.sendSaveMotionRequest(("192.168.0.2",3000),frame)
+    def handleIntruderDetected(self, frame, timestamp):
+        # send pictureInfo to main server list
+        for endpoint in self.mainServerList:
+            pictureInfo = PictureInfo(frame, timestamp, self.name)
+            self.sendSaveMotionRequest(endpoint, pictureInfo)
 
 
     def checkForIntruders(self, frame, timestamp):
@@ -140,7 +154,7 @@ class Camera():
                 # check to see if the number of frames with consistent motion is
                 # high enough
                 if self.motionCounter >= self.conf["min_motion_frames"]:
-                    Thread(target=self.handleIntruderDetected,args=(frame,)).start()
+                    Thread(target=self.handleIntruderDetected,args=(frame,timestamp)).start()
                     # update the last uploaded timestamp and reset the motion
                     # counter
                     self.lastUploaded = timestamp
@@ -207,18 +221,18 @@ class Camera():
 
     def checkForMessagesPeriodically(self):
         while self.shouldRun:
-            try:
-                haveMessage, envelope = self.comm.getMessage()
-                if haveMessage:
-                    logging.info('Handling new message')
-                    self.processNewMessage(envelope)
-            except:
-                pass
+            haveMessage, envelope = self.comm.getMessage()
+            if haveMessage:
+                logging.info('Handling new message')
+                self.processNewMessage(envelope)
 
     def processNewMessage(self, envelope):
         if isinstance(envelope.message, RegisterReply):
             logging.info('Handling Register Reply')
             self.handleRegisterReply(envelope)
+        elif isinstance(envelope.message, ServerListReply):
+            logging.info('Handling Server List Reply')
+            self.handleServerListReply(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
@@ -226,6 +240,13 @@ class Camera():
         LocalProcessInfo.setProcessId(processId)
         logging.info('Received ProcessID: {}'.format(LocalProcessInfo.getProcessId()))
         self.canStartSending = True
+        self.sendServerListRequest()
+
+    def handleServerListReply(self, envelope):
+        self.mainServerList = envelope.message.servers
+        logging.info('Received Main Server List')
+        for server in self.mainServerList:
+            logging.info('Main Server Endpoint: {}'.format(server))
             
 
 if __name__ == '__main__':
