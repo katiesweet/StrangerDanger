@@ -37,12 +37,12 @@ class MainServer:
 
 
     def sendRegisterRequest(self):
-        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.ClientProcess))
+        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.MainServer))
         self.comm.sendMessage(message)
         logging.debug("Sending message " + repr(message))
 
     def sendMotionDetectedReply(self, cameraEndpoint, success):
-        message = Envelope(cameraEndpoint, MotionDetectedReply(success)
+        message = Envelope(cameraEndpoint, MotionDetectedReply(success))
         self.comm.sendMessage(message)
         logging.debug("Sending MotionDetectedReply message " + repr(message))
 
