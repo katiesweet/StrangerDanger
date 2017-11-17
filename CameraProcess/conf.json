@@ -4,7 +4,7 @@
   "min_motion_frames": 5,
   "camera_warmup_time": 3.5,
   "delta_thresh": 5,
-  "resolution": [320, 280],
+  "resolution": [320, 288],
   "fps": 16,
   "min_area": 10000
 }

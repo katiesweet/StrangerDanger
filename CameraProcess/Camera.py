@@ -17,6 +17,7 @@ import cv2
 import datetime
 import time
 import thread
+import numpy as np
 from threading import Thread
 import sys
 sys.path.append('../')
@@ -138,8 +139,11 @@ class Camera():
 
     def handleIntruderDetected(self, frame, timestamp):
         # send pictureInfo to main server list
+        print 'main server list = {}'.format(self.mainServerList)
         for endpoint in self.mainServerList:
-            pictureInfo = PictureInfo(frame, timestamp, self.name)
+            print 'endpoint {}'.format(endpoint)
+            #pictureInfo = PictureInfo(frame, timestamp, self.name)
+            pictureInfo = PictureInfo(np.array([[0, 255, 0], [255, 0, 255]], np.uint32), timestamp, self.name)
             self.sendSaveMotionRequest(endpoint, pictureInfo)
 
 
@@ -154,7 +158,8 @@ class Camera():
                 # check to see if the number of frames with consistent motion is
                 # high enough
                 if self.motionCounter >= self.conf["min_motion_frames"]:
-                    Thread(target=self.handleIntruderDetected,args=(frame,timestamp)).start()
+                    #Thread(target=self.handleIntruderDetected,args=(frame,timestamp)).start()
+                    self.handleIntruderDetected(frame,timestamp)
                     # update the last uploaded timestamp and reset the motion
                     # counter
                     self.lastUploaded = timestamp
