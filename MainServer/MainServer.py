@@ -19,12 +19,21 @@ class MainServer:
     def __init__(self):
         logging.info('Creating Main Server')
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
+        self.shouldRun = True
         self.registrationServerAddress = ("34.209.66.116", 50000)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
+        t2 = Thread(target=self.__handleInput,args=())
         t1.start()
+        t2.start()
         t1.join()
+        t2.join()
+
+    def __handleInput(self):
+        var = raw_input("Enter something to quit.\n")
+        self.shouldRun = False
+
 
     def sendRegisterRequest(self):
         message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.ClientProcess))
@@ -32,12 +41,10 @@ class MainServer:
         logging.debug("Sending message " + repr(message))
 
     def __handleIncomingMessages(self):
-        while True:
+        while self.shouldRun:
             hasMessage, message = self.comm.getMessage()
             if hasMessage:
                 self.__processNewMessage(message)
-            else:
-                time.sleep(0.1)
 
     def __processNewMessage(self, envelope):
         if isinstance(envelope.message, RegisterReply):
