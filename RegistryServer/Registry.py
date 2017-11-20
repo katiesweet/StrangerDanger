@@ -23,13 +23,13 @@ class Registry:
     def __init__(self):
         logging.info("Creating registry process")
         #myEndpoint = ('', 50000) # Good for both local and external connections
-        myEndpoint = ('localhost', 50001)
+        myEndpoint = ('localhost', 50003)
 
         self.communicationsLock = threading.Lock()
         self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)
 
         self.mainServerLock = threading.Lock()
-        self.knownMainServers = []
+        self.knownMainServers = {}
 
         self.shouldRun = True
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -67,9 +67,12 @@ class Registry:
             with self.mainServerLock:
                 self.knownMainServers[envelope.endpoint] = True
 
-        responseMessage = Envelope(envelope.endpoint, RegisterReply(True, Registry.getNextProcessId()))
+        responseMessage = RegisterReply(True, Registry.getNextProcessId())
+        responseMessage.setConversationId(envelope.message.conversationId)
+
+        outEnv = Envelope(envelope.endpoint, responseMessage)
         with self.communicationsLock:
-            self.comm.sendMessage(responseMessage)
+            self.comm.sendMessage(outEnv)
 
     def __getArrayOfMainServers(self):
         with self.mainServerLock:
@@ -83,14 +86,15 @@ class Registry:
 
     def __handleMainServerRequest(self, envelope):
         knownMainServers = self.__getArrayOfMainServers()
-        responseMessage = Envelope(envelope.endpoint, ServerListReply(True, knownMainServers))
-
+        responseMessage = ServerListReply(True, knownMainServers)
+        responseMessage.setConversationId(envelope.message.conversationId)
+        outEnv = Envelope(envelope.endpoint, responseMessage)
         with self.communicationsLock:
-            self.comm.sendMessage(responseMessage)
+            self.comm.sendMessage(outEnv)
 
     def __handleAliveReponseOfMainServer(self, envelope):
         with self.mainServerLock:
-            knownMainServers[envelope.endpoint] = True
+            self.knownMainServers[envelope.endpoint] = True
 
     def __pingMainServersPeriodically(self):
         previousPingTime = datetime.datetime.now()
@@ -108,13 +112,13 @@ class Registry:
         messagesToSend = []
 
         with self.mainServerLock:
-            for endpoint, isAlive in mainServers.items():
+            for endpoint, isAlive in self.knownMainServers.items():
                 if not isAlive:
                     # Purge all servers that didn't respond since last ping
-                    mainServers.pop(endpoint)
+                    self.knownMainServers.pop(endpoint)
                 else:
                     # Create messages to send to servers that were alive
-                    mainServers[endpoint] = False
+                    self.knownMainServers[endpoint] = False
                     messagesToSend.append(Envelope(endpoint, AliveRequest()))
 
         with self.communicationsLock:
