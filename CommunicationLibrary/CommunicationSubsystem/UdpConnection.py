@@ -23,21 +23,21 @@ class UdpConnection:
     def __sendMessage(self, udpSocket, envelope):
         encodedMessage = envelope.message.encode()
         try:
-            print "Sending message", envelope.message, " to ", \
-                envelope.endpoint
+            #print "Sending message", envelope.message, " to ", \
+            #    envelope.endpoint
             logging.debug("Sending message " + repr(envelope.message) \
                 + " to " + repr(envelope.endpoint))
             udpSocket.sendto(encodedMessage, envelope.endpoint)
         except socket.error, msg:
             logging.error("Could not send message to server.")
-            print socket.error, msg
+            #print socket.error, msg
 
     def __receiveMessage(self, udpSocket):
         try:
             data, addr = udpSocket.recvfrom(1024)
             if data:
                 message = Message.decode(data)
-                print "Received message: ", message, " from ", addr
+                #print "Received message: ", message, " from ", addr
                 logging.debug("Received message " + repr(message) + \
                     " from " + repr(addr))
                 envelope = Envelope(addr, message)

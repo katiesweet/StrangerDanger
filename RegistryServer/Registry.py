@@ -1,6 +1,5 @@
 import sys
-import thread
-import threading
+from threading import Thread
 import copy
 sys.path.append('../') # Start at root directory for all imports
 
@@ -25,7 +24,14 @@ class Registry:
         self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)
         self.shouldRun = True
         self.knownMainServers = []
-        thread.start_new_thread(self.__handleIncomingMessages,())
+        t1 = Thread(target=self.__handleIncomingMessages,args=())
+        t2 = Thread(target=self.__handleInput,args=())
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+    def __handleInput(self):
         var = raw_input("Enter something to quit.\n")
         self.shouldRun = False
 
