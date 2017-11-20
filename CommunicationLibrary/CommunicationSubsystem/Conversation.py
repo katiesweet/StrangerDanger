@@ -276,7 +276,7 @@ class CalculateStatsConversation(BaseConversation):
     initiated = None # this conversation will only ever be received however
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
-        self.protocol = createProtocol()
+        self.protocol = self.createProtocol()
         super(CalculateStatsConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created CalculateStatsConversation")
         return
@@ -296,7 +296,7 @@ class TransferMotionImageConversation(BaseConversation):
     initiated = None
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
-        self.protocol = createProtocol()
+        self.protocol = self.createProtocol()
         super(TransferMotionImageConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created TransferMotionImageConversation")
         return
