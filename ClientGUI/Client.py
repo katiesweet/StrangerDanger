@@ -20,8 +20,8 @@ class Client:
         self.master = master
         master.title("Client")
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
-        self.registrationServerAddress = ("34.209.66.116" , 50000)
-        #self.registrationServerAddress = ("localhost", 50000)
+        #self.registrationServerAddress = ("34.209.66.116" , 50000)
+        self.registrationServerAddress = ("localhost", 50001)
         self.mainServerAddress = (None, None)
         self.canStartSending = False
 
