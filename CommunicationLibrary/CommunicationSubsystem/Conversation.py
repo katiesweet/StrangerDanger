@@ -208,14 +208,14 @@ class BaseConversation(object):
         m_type = None
         received_messages = [pro for pro in self.protocol if pro['status'] == True and pro['outgoing'] == False]
         if len(received_messages) > 0:
-            m_type = received_messages[len(received_messages)]['type']
+            m_type = received_messages[len(received_messages)-1]['type']
         return m_type
 
     def getLastMessageSent(self):
         envelope = None
         sent_messages = [pro for pro in self.protocol if pro['status'] == True and pro['outgoing'] == True]
         if len(sent_messages) > 0:
-            envelope = sent_messages[len(sent_messages)]['envelope']
+            envelope = sent_messages[len(sent_messages)-1]['envelope']
         return envelope
 
     def should_handle(self, m_type, is_last):
@@ -237,6 +237,7 @@ class BaseConversation(object):
                 self.sendNewMessage(envelope)
 
     def resendMessage(self, envelope):
+        print ('RESENDING', self.waiting)
         envelope = self.getLastMessageSent()
         if envelope:
             self.waiting = True
@@ -249,19 +250,25 @@ class BaseConversation(object):
     def checkReceived(self):
         if self.waiting:
             self.missed_waits += 1
+            print('missed getting anything back')
             logging.debug("missed message")
             if self.missed_waits >= self.max_missed_waits:
                 logging.info("trying to resend message")
                 self.resent_count += 1
                 if self.resent_count >= self.max_resent_count:
+                    print ('destroying message, because resent enough times')
                     logging.debug("destroying conversation, recipient endpoint not available")
                     envelope = self.getLastMessageSent()
                     if self.destructFunc and envelope:
                         self.destructFunc(envelope.message.conversationId)
                 else:
-                    self.resendMessage()
+                    print ('missed enough, trying to resend message')
+                    self.resendMessage(self.getLastMessageSent())
             elif self.waiting:
+                print ('restarting TIMER')
                 Timer(1, self.checkReceived).start()
+        else:
+            print ('no longer waiting', self.waiting)
 
     def sendNewMessage(self, envelope):
         # QUESTION allow to send a message while timer is running? Not sure when that should ever happen.
@@ -276,7 +283,9 @@ class BaseConversation(object):
                         self.destructFunc(envelope.message.conversationId)
                     if not is_last:
                         self.waiting = True
+                        print ('HERE -> ', self.waiting)
                         self.missed_waits = 0
+                        self.resent_count = 0
                         Timer(1, self.checkReceived).start()
                     return True
         return False
@@ -286,8 +295,10 @@ class BaseConversation(object):
         m_type, is_last = self.getCurrentMessage()
         if m_type:
             if isinstance(envelope.message, m_type):
+                print ('RECEIVED MESSAGE')
                 self.waiting = False
                 self.missed_waits = 0
+                self.resent_count = 0
                 if self.checkOffMessage(envelope):
                     logging.debug("received message of {0} type".format(m_type))
                     if self.should_handle(m_type, is_last):
