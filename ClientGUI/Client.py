@@ -21,9 +21,9 @@ class Client:
         master.title("Client")
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         #self.registrationServerAddress = ("34.209.72.192" , 50000)
-	#self.registrationServerAddress = ("34.210.85.201" , 50000)
-	self.registrationServerAddress = ("34.209.66.116" , 50000)
-        #self.registrationServerAddress = ("localhost", 50000)
+	    #self.registrationServerAddress = ("34.210.85.201" , 50000)
+	    #self.registrationServerAddress = ("34.209.66.116" , 50000)
+        self.registrationServerAddress = ("localhost", 50003)
         self.mainServerAddress = (None, None)
         self.canStartSending = False
 
@@ -79,10 +79,12 @@ class Client:
     def handleServerListReply(self, envelope):
         mainServers = envelope.message.servers
         if not mainServers:
-            print "Reponse contained no main servers"
+            logging.info("Reponse contained no main servers")
             self.mainServerAddress = (None, None)
         else:
-            self.mainServerAddress = mainServers[0]
+            server = mainServers[0]
+            logging.info("Now corresponding with main server:" + repr(server))
+            self.mainServerAddress = server
 
 if __name__ == '__main__':
     root = Tk()

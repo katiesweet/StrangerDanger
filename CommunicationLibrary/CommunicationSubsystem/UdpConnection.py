@@ -52,7 +52,7 @@ class UdpConnection:
         try:
             udpSocket.bind(myEndpoint)
         except:
-            "Binding error"
+            logging.error("Binding error")
 
         logging.debug("UDP Socket listening at endpoint " + \
             repr(udpSocket.getsockname()))
