@@ -177,6 +177,8 @@ class BaseConversation(object):
         self.waiting = False
         self.missed_waits = 0
         self.max_missed_waits = 5
+        self.resent_count = 0
+        self.max_resent_count = 3
 
         self.shouldRun = True
         thread.start_new_thread(self.__run, ())
@@ -237,18 +239,28 @@ class BaseConversation(object):
     def resendMessage(self, envelope):
         envelope = self.getLastMessageSent()
         if envelope:
+            self.waiting = True
+            self.missed_waits = 0
             self.myOutgoingMessageQueue.put(envelope)
+            Timer(1, self.checkReceived).start()
             return True
         return False
 
-    def checkReceived():
+    def checkReceived(self):
         if self.waiting:
             self.missed_waits += 1
             logging.debug("missed message")
             if self.missed_waits >= self.max_missed_waits:
-                logging.info("resending missed message")
-                self.resendMessage()
-            else:
+                logging.info("trying to resend message")
+                self.resent_count += 1
+                if self.resent_count >= self.max_resent_count:
+                    logging.debug("destroying conversation, recipient endpoint not available")
+                    envelope = self.getLastMessageSent()
+                    if self.destructFunc and envelope:
+                        self.destructFunc(envelope.message.conversationId)
+                else:
+                    self.resendMessage()
+            elif self.waiting:
                 Timer(1, self.checkReceived).start()
 
     def sendNewMessage(self, envelope):
@@ -265,7 +277,7 @@ class BaseConversation(object):
                     if not is_last:
                         self.waiting = True
                         self.missed_waits = 0
-                         Timer(1, self.checkReceived).start()
+                        Timer(1, self.checkReceived).start()
                     return True
         return False
 
@@ -313,8 +325,8 @@ class RegistrationConversation(BaseConversation):
         return
 
     def createProtocol(self, is_outgoing):
-        protocol = [{'type': RegisterRequest, 'envelope': null, 'outgoing': is_outgoing, 'status': False},
-                    {'type': RegisterReply, 'envelope': null, 'outgoing': (not is_outgoing), 'status': False}]
+        protocol = [{'type': RegisterRequest, 'envelope': None, 'outgoing': is_outgoing, 'status': False},
+                    {'type': RegisterReply, 'envelope': None, 'outgoing': (not is_outgoing), 'status': False}]
         return protocol
 
     def __str__(self):
@@ -337,8 +349,8 @@ class SubscribeConversation(BaseConversation):
         return
 
     def createProtocol(self, is_outgoing):
-        protocol = [{'type': SubscribeRequest, 'envelope': null, 'outgoing': is_outgoing, 'status': False},
-                    {'type': AckReply, 'envelope': null, 'outgoing': (not is_outgoing), 'status': False}]
+        protocol = [{'type': SubscribeRequest, 'envelope': None, 'outgoing': is_outgoing, 'status': False},
+                    {'type': AckReply, 'envelope': None, 'outgoing': (not is_outgoing), 'status': False}]
         return protocol
 
     def __str__(self):
@@ -367,8 +379,8 @@ class InitiatedRequestStatisticsConversation(RequestStatisticsConversation):
     initiated = True
 
     def createProtocol(self):
-        protocol = [{'type': StatisticsRequest, 'envelope': null, 'outgoing': True, 'status': False},
-                    {'type': StatisticsReply, 'envelope': null, 'outgoing': False, 'status': False}]
+        protocol = [{'type': StatisticsRequest, 'envelope': None, 'outgoing': True, 'status': False},
+                    {'type': StatisticsReply, 'envelope': None, 'outgoing': False, 'status': False}]
         return protocol
 
     def __str__(self):
@@ -378,9 +390,9 @@ class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
     initiated = False
 
     def createProtocol(self):
-        protocol = [{'type': StatisticsRequest, 'envelope': null, 'outgoing': False, 'status': False},
+        protocol = [{'type': StatisticsRequest, 'envelope': None, 'outgoing': False, 'status': False},
                     # heartbeats
-                    {'type': CalcStatisticsRequest, 'envelope': null, 'outgoing': True, 'status': False}]
+                    {'type': CalcStatisticsRequest, 'envelope': None, 'outgoing': True, 'status': False}]
         return protocol
 
     def __str__(self):
@@ -398,9 +410,9 @@ class RawDataQueryConversation(BaseConversation):
         return
 
     def createProtocol(self, is_outgoing):
-        protocol = [{'type': RawQueryRequest, 'envelope': null, 'outgoing': is_outgoing, 'status': False},
+        protocol = [{'type': RawQueryRequest, 'envelope': None, 'outgoing': is_outgoing, 'status': False},
                     # hearbeats
-                    {'type': RawQueryReply, 'envelope': null, 'outgoing': (not is_outgoing), 'status': False}]
+                    {'type': RawQueryReply, 'envelope': None, 'outgoing': (not is_outgoing), 'status': False}]
         return protocol
 
     def __str__(self):
@@ -423,8 +435,8 @@ class SyncDataConversation(BaseConversation):
         return
 
     def createProtocol(self, is_outgoing):
-        protocol = [{'type': SyncDataRequest, 'envelope': null, 'outgoing': is_outgoing, 'status': False},
-                    {'type': SyncDataReply, 'envelope': null, 'outgoing': (not is_outgoing), 'status': False}]
+        protocol = [{'type': SyncDataRequest, 'envelope': None, 'outgoing': is_outgoing, 'status': False},
+                    {'type': SyncDataReply, 'envelope': None, 'outgoing': (not is_outgoing), 'status': False}]
         return protocol
 
     def __str__(self):
@@ -453,8 +465,8 @@ class InitiatedMainServerListConversation(MainServerListConversation):
     initiated = True
 
     def createProtocol(self):
-        protocol = [{'type': ServerListRequest, 'envelope': null, 'outgoing': True, 'status': False},
-                    {'type': ServerListReply, 'envelope': null, 'outgoing': False, 'status': False}]
+        protocol = [{'type': ServerListRequest, 'envelope': None, 'outgoing': True, 'status': False},
+                    {'type': ServerListReply, 'envelope': None, 'outgoing': False, 'status': False}]
         return protocol
 
     def __str__(self):
@@ -464,8 +476,8 @@ class ReceivedMainServerListConversation(MainServerListConversation):
     initiated = False
 
     def createProtocol(self):
-        protocol = [{'type': ServerListRequest, 'envelope': null, 'outgoing': False, 'status': False},
-                    {'type': ServerListReply, 'envelope': null, 'outgoing': True, 'status': False}]
+        protocol = [{'type': ServerListRequest, 'envelope': None, 'outgoing': False, 'status': False},
+                    {'type': ServerListReply, 'envelope': None, 'outgoing': True, 'status': False}]
         return protocol
 
     def __str__(self):
@@ -483,9 +495,9 @@ class CalculateStatsConversation(BaseConversation):
         return
 
     def createProtocol(self, is_outgoing):
-        protocol = [{'type': CalcStatisticsRequest, 'envelope': null, 'outgoing': is_outgoing, 'status': False},
+        protocol = [{'type': CalcStatisticsRequest, 'envelope': None, 'outgoing': is_outgoing, 'status': False},
                     # heartbeats
-                    {'type': StatisticsReply, 'envelope': null, 'outgoing': (not is_outgoing), 'status': False}]
+                    {'type': StatisticsReply, 'envelope': None, 'outgoing': (not is_outgoing), 'status': False}]
         return protocol
 
     def __str__(self):
@@ -503,8 +515,8 @@ class TransferMotionImageConversation(BaseConversation):
         return
 
     def createProtocol(self, is_outgoing):
-        protocol = [{'type': SaveMotionRequest, 'envelope': null, 'outgoing': is_outgoing, 'status': False},
-                    {'type': MotionDetectedReply, 'envelope': null, 'outgoing': (not is_outgoing), 'status': False}]
+        protocol = [{'type': SaveMotionRequest, 'envelope': None, 'outgoing': is_outgoing, 'status': False},
+                    {'type': MotionDetectedReply, 'envelope': None, 'outgoing': (not is_outgoing), 'status': False}]
         return protocol
 
     def __str__(self):
@@ -527,8 +539,8 @@ class GetStatusConversation(BaseConversation):
         return
 
     def createProtocol(self, is_outgoing):
-        protocol = [{'type': AliveRequest, 'envelope': null, 'outgoing': is_outgoing, 'status': False},
-                    {'type': AliveReply, 'envelope': null, 'outgoing': (not is_outgoing), 'status': False}]
+        protocol = [{'type': AliveRequest, 'envelope': None, 'outgoing': is_outgoing, 'status': False},
+                    {'type': AliveReply, 'envelope': None, 'outgoing': (not is_outgoing), 'status': False}]
         return protocol
 
     def __str__(self):
