@@ -1,10 +1,163 @@
 import Queue
 import thread
 import logging
+from threading import Timer
 
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
 from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
+
+
+# class BaseConversation(object):
+#     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+#         self.toSocketQueue = toSocketQueue # Used to send a message
+#         self.fromConversationQueue = fromConversationQueue # Used to pass a message to the main application
+#
+#         self.destructFunc = destructFunc
+#
+#         self.myOutgoingMessageQueue = Queue.Queue()
+#         self.myIncomingMessageQueue = Queue.Queue()
+#
+#         if envelopeIsOutgoing:
+#             self.sendNewMessage(envelope)
+#         else:
+#             self.receivedNewMessage(envelope)
+#
+#         self.waiting = False
+#         self.missed_waits = 0
+#         self.expected_m_type = None
+#
+#         self.shouldRun = True
+#         thread.start_new_thread(self.__run, ())
+#
+#     def checkOffMessage(self, envelope):
+#         unfinished_messages = [pro for pro in self.protocol if pro['status'] == False]
+#         if len(unfinished_messages) > 0:
+#             expected_mess = unfinished_messages[0]
+#             if expected_mess['type'] == type(envelope.message):
+#                 # if received, then check off 'TRUE' on the last sent message
+#                 # basically only mark as true on 'received' (sent has to wait until a received..unless it's the last message)
+#                 expected_mess['status'] = True
+#                 expected_mess['envelope'] = envelope;
+#                 return True
+#         return False
+#
+#     def getCurrentMessage(self):
+#         messageType = None
+#         is_last = False
+#         unfinished_messages = [pro for pro in self.protocol if pro['status'] == False]
+#         if len(unfinished_messages) > 0:
+#             messageType = unfinished_messages[0]['type']
+#         if len(unfinished_messages) == 1:
+#             is_last = True
+#         return (messageType, is_last)
+#
+#     def getLastMessageReceived(self):
+#         m_type = None
+#         received_messages = [pro for pro in self.protocol if pro['status'] == True and pro['outgoing'] == False]
+#         if len(received_messages) > 0:
+#             m_type = received_messages[len(received_messages)]['type']
+#         return m_type
+#
+#     def getLastMessageSent(self):
+#         envelope = None
+#         sent_messages = [pro for pro in self.protocol if pro['status'] == True and pro['outgoing'] == True]
+#         if len(sent_messages) > 0:
+#             envelope = sent_messages[len(sent_messages)]['envelope']
+#         return envelope
+#
+#     def handle_resend(self):
+#         envelope = self.getLastMessageSent()
+#         if envelope:
+#             # TODO shoot should maybe send the whole ENVELOPE, not just the message????
+#         pass
+#
+#     def should_handle(self, m_type, is_last):
+#         # can be overridden in the subclass or to added to still call super()
+#         if m_type == AliveRequest:
+#             return True
+#         if m_type == AckReply and is_last:
+#             return True
+#
+#     def handle(self, m_type, prev_envelope):
+#         # can be overridden in the subclass or to added to still call super()
+#         message = None
+#         if m_type == AliveRequest:
+#             message = AliveReply(True)
+#         if message and prev_envelope:
+#             message.setConversationId(prev_envelope.message.conversationId)
+#             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
+#             if envelope:
+#                 self.sendNewMessage(envelope)
+#
+#     def sendNewMessage(self, envelope):
+#         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
+#         m_type, is_last = self.getCurrentMessage()
+#         if m_type:
+#             if isinstance(envelope.message, m_type):
+#                 if self.checkOffMessage(envelope):
+#                     logging.debug("sending message of {0} type".format(m_type))
+#                     self.myOutgoingMessageQueue.put(envelope)
+#                     if is_last and self.destructFunc:
+#                         self.destructFunc(envelope.message.conversationId)
+#                     else:
+#                         self.waiting = True
+#                         self.missed_waits = 0
+#                         self.expected_m_type, _ = self.getCurrentMessage()
+#                         thread.start_new_thread(self.__wait, ())
+#                     return True
+#         return False
+#
+# # This also needs to handle if the message received doesn't match and it is a duplicate of the last received (not sent) messages
+# # should trigger the handle_resend_message that defaults to resend the last 'sent' message. OR this can be overriden by the specific conversation/protocol.
+# # and calling the sendMessage function will reset the time out/waiting data for the wait
+#     def receivedNewMessage(self, envelope):
+#         """Called from conversation manager for when a socket receives a message intended for this conversation. """
+#         # check for explicit message type, if it matches then
+#         # set waiting_for_response = to false (reset all waiting data to false)
+#         self.waiting = False
+#         self.missed_waits = 0
+#         m_type, is_last = self.getCurrentMessage()
+#         if m_type:
+#             if isinstance(envelope.message, m_type):
+#                 if self.checkOffMessage(envelope):
+#                     # or reset here
+#                     logging.debug("received message of {0} type".format(m_type))
+#                     if self.should_handle(m_type, is_last):
+#                         self.handle(m_type, envelope)
+#                     else:
+#                         self.myIncomingMessageQueue.put(envelope)
+#                     if is_last and self.destructFunc:
+#                         self.destructFunc(envelope.message.conversationId)
+#                     return True
+#             else:
+#                 if self.getLastMessageReceived() == m_type:
+#                     self.handle_resend()
+#                 else:
+#                     pass # QUESTION should we do anything here?
+#         return False
+#
+#     def __wait(self):
+#         while self.waiting:
+#             self.missed_waits += 1
+#             if self.missed_waits >= self.max_missed_waits and self.waiting:
+#                 logging.debug('reached waiting timeout')
+#                 missed_waits = 0
+#                 self.waiting = False
+#                 self.handle_resend()
+#             else:
+#                 logging.debug('sleeping again');
+#                 time.sleep(1)
+#
+#     def __run(self):
+#         while self.shouldRun:
+#             if not self.myOutgoingMessageQueue.empty():
+#                 message = self.myOutgoingMessageQueue.get()
+#                 self.toSocketQueue.put(message)
+#             if not self.myIncomingMessageQueue.empty():
+#                 message = self.myIncomingMessageQueue.get()
+#                 self.fromConversationQueue.put(message)
+
 
 class BaseConversation(object):
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
@@ -21,16 +174,21 @@ class BaseConversation(object):
         else:
             self.receivedNewMessage(envelope)
 
+        self.waiting = False
+        self.missed_waits = 0
+        self.max_missed_waits = 5
+
         self.shouldRun = True
         thread.start_new_thread(self.__run, ())
 
 
-    def checkOffMessage(self, m_type):
+    def checkOffMessage(self, envelope):
         unfinished_messages = [pro for pro in self.protocol if pro['status'] == False]
         if len(unfinished_messages) > 0:
             message = unfinished_messages[0]
-            if message['type'] == m_type:
+            if message['type'] == type(envelope.message):
                 message['status'] = True
+                message['envelope'] = envelope
                 return True
         return False
 
@@ -43,6 +201,20 @@ class BaseConversation(object):
         if len(unfinished_messages) == 1:
             is_last = True
         return (messageType, is_last)
+
+    def getLastMessageReceived(self):
+        m_type = None
+        received_messages = [pro for pro in self.protocol if pro['status'] == True and pro['outgoing'] == False]
+        if len(received_messages) > 0:
+            m_type = received_messages[len(received_messages)]['type']
+        return m_type
+
+    def getLastMessageSent(self):
+        envelope = None
+        sent_messages = [pro for pro in self.protocol if pro['status'] == True and pro['outgoing'] == True]
+        if len(sent_messages) > 0:
+            envelope = sent_messages[len(sent_messages)]['envelope']
+        return envelope
 
     def should_handle(self, m_type, is_last):
         # can be overridden in the subclass or to added to still call super()
@@ -62,16 +234,38 @@ class BaseConversation(object):
             if envelope:
                 self.sendNewMessage(envelope)
 
+    def resendMessage(self, envelope):
+        envelope = self.getLastMessageSent()
+        if envelope:
+            self.myOutgoingMessageQueue.put(envelope)
+            return True
+        return False
+
+    def checkReceived():
+        if self.waiting:
+            self.missed_waits += 1
+            logging.debug("missed message")
+            if self.missed_waits >= self.max_missed_waits:
+                logging.info("resending missed message")
+                self.resendMessage()
+            else:
+                Timer(1, self.checkReceived).start()
+
     def sendNewMessage(self, envelope):
+        # QUESTION allow to send a message while timer is running? Not sure when that should ever happen.
         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
         m_type, is_last = self.getCurrentMessage()
-        if m_type: # if m_type is None, there is not another message to send in the protocol
+        if m_type:
             if isinstance(envelope.message, m_type):
-                if self.checkOffMessage(m_type):
+                if self.checkOffMessage(envelope):
                     logging.debug("sending message of {0} type".format(m_type))
                     self.myOutgoingMessageQueue.put(envelope)
                     if is_last and self.destructFunc:
                         self.destructFunc(envelope.message.conversationId)
+                    if not is_last:
+                        self.waiting = True
+                        self.missed_waits = 0
+                         Timer(1, self.checkReceived).start()
                     return True
         return False
 
@@ -80,7 +274,9 @@ class BaseConversation(object):
         m_type, is_last = self.getCurrentMessage()
         if m_type:
             if isinstance(envelope.message, m_type):
-                if self.checkOffMessage(m_type):
+                self.waiting = False
+                self.missed_waits = 0
+                if self.checkOffMessage(envelope):
                     logging.debug("received message of {0} type".format(m_type))
                     if self.should_handle(m_type, is_last):
                         self.handle(m_type, envelope)
@@ -89,6 +285,11 @@ class BaseConversation(object):
                     if is_last and self.destructFunc:
                         self.destructFunc(envelope.message.conversationId)
                     return True
+                else:
+                    if self.getLastMessageReceived() == m_type:
+                        if self.resendMessage():
+                            return True
+                    # else QUESTION should we do anything else there?
         return False
 
     def __run(self):
