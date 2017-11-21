@@ -23,14 +23,14 @@ class UdpConnection:
     def __sendMessage(self, udpSocket, envelope):
         encodedMessage = envelope.message.encode()
         try:
-            print "Sending message", envelope.message, " to ", \
-                envelope.endpoint
+            #print "Sending message", envelope.message, " to ", \
+            #    envelope.endpoint
             logging.debug("Sending message " + repr(envelope.message) \
                 + " to " + repr(envelope.endpoint))
             udpSocket.sendto(encodedMessage, envelope.endpoint)
         except socket.error, msg:
             logging.error("Could not send message to server.")
-            print socket.error, msg
+            #print socket.error, msg
 
     def __receiveMessage(self, udpSocket):
         try:
@@ -38,7 +38,7 @@ class UdpConnection:
             data, addr = udpSocket.recvfrom(2048)
             if data:
                 message = Message.decode(data)
-                print "Received message: ", message, " from ", addr
+                #print "Received message: ", message, " from ", addr
                 logging.debug("Received message " + repr(message) + \
                     " from " + repr(addr))
                 envelope = Envelope(addr, message)
@@ -52,7 +52,7 @@ class UdpConnection:
         try:
             udpSocket.bind(myEndpoint)
         except:
-            "Binding error"
+            logging.error("Binding error")
 
         logging.debug("UDP Socket listening at endpoint " + \
             repr(udpSocket.getsockname()))

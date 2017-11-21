@@ -20,11 +20,15 @@ class Client:
         self.master = master
         master.title("Client")
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
-        self.registrationServerAddress = ("34.209.72.192" , 50000)
+        #self.registrationServerAddress = ("34.209.72.192" , 50000)
+	    #self.registrationServerAddress = ("34.210.85.201" , 50000)
+	    #self.registrationServerAddress = ("34.209.66.116" , 50000)
+        self.registrationServerAddress = ("localhost", 50003)
         self.mainServerAddress = (None, None)
         self.canStartSending = False
 
         self.sendRegisterRequest()
+        self.sendServerListRequest()
         self.checkForMessagesPeriodically()
 
         #self.sendServerListRequest()
@@ -62,6 +66,8 @@ class Client:
     def processNewMessage(self, envelope):
         if isinstance(envelope.message, RegisterReply):
             self.handleRegisterReply(envelope)
+        elif isinstance(envelope.message, ServerListReply):
+            self.handleServerListReply(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
@@ -69,6 +75,16 @@ class Client:
         LocalProcessInfo.setProcessId(processId)
         Label(self.master, text="Process Id: " + str(processId)).grid(row=1, column=1)
         self.canStartSending = True
+
+    def handleServerListReply(self, envelope):
+        mainServers = envelope.message.servers
+        if not mainServers:
+            logging.info("Reponse contained no main servers")
+            self.mainServerAddress = (None, None)
+        else:
+            server = mainServers[0]
+            logging.info("Now corresponding with main server:" + repr(server))
+            self.mainServerAddress = server
 
 if __name__ == '__main__':
     root = Tk()
