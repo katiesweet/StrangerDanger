@@ -538,7 +538,7 @@ class TestMessages(unittest.TestCase):
         self.assertEquals(LocalProcessInfo.getProcessId(),16)
 
     def testMessageId(self):
-        messageId = MessageId.create()
+        messageId = MessageId()
         self.assertIsNot(messageId, None)
         seqNum = messageId.sequenceNumber
         nextSeqNum = MessageId.getNextSequenceNumber()

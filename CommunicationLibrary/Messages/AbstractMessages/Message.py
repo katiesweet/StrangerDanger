@@ -7,9 +7,10 @@ from CommunicationLibrary.Messages.SharedObjects.MessageId import MessageId
 class Message:
     __metaclass__ = ABCMeta
 
-    def __init__(self, messageId=MessageId.create()):
-        self.messageId = messageId
-        self.conversationId = copy.deepcopy(messageId)
+    #def __init__(self, messageId=MessageId.create()):
+    def __init__(self):
+        self.messageId = MessageId()
+        self.conversationId = copy.deepcopy(self.messageId)
 
     def setConversationId(self, conversationId):
         self.conversationId = conversationId

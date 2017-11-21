@@ -53,13 +53,14 @@ class Registry:
                 self.__processNewMessage(message)
 
     def __processNewMessage(self, envelope):
-        if isinstance(envelope.message, RegisterRequest):
+        msg = envelope.message
+        logging.info("Received new message "+ str(msg.messageId) + " " + str(msg.conversationId))
+        if isinstance(msg, RegisterRequest):
             self.__handleRegisterRequest(envelope)
-        elif isinstance(envelope.message, ServerListRequest):
+        elif isinstance(msg, ServerListRequest):
             self.__handleMainServerRequest(envelope)
-        elif isinstance(envelope.message, AliveReply):
+        elif isinstance(msg, AliveReply):
             self.__handleAliveReponseOfMainServer(envelope)
-        #elif isinstance(envelope.message, )
 
     def __handleRegisterRequest(self, envelope):
         processType = envelope.message.processType
@@ -101,7 +102,7 @@ class Registry:
         while self.shouldRun:
             newTime = datetime.datetime.now()
             # if we haven't pinged in over 10 minutes
-            if newTime > previousPingTime + datetime.timedelta(seconds=600):
+            if newTime > previousPingTime + datetime.timedelta(seconds=10):
                 previousPingTime = newTime
                 self.__pingMainServers()
 
@@ -122,8 +123,8 @@ class Registry:
                     messagesToSend.append(Envelope(endpoint, AliveRequest()))
 
         with self.communicationsLock:
-            for message in messagesToSend:
-                self.comm.sendMessage(message)
+            for envelope in messagesToSend:
+                self.comm.sendMessage(envelope)
 
 
     @staticmethod
