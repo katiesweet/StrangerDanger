@@ -4,5 +4,6 @@ from Envelope import *
 from LocalProcessInfo import *
 from MessageId import *
 from PictureInfo import *
+from PictureManager import *
 from ProcessType import *
 from PublicEndPoint import *
