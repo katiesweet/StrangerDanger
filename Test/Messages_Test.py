@@ -1,6 +1,7 @@
 #!/usr/bin/python2
 import unittest
 import numpy as np
+import math
 from datetime import datetime, date
 import sys
 sys.path.append("../")
@@ -554,6 +555,14 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(data.timeStamp, timeStamp)
         self.assertEqual(data.cameraName, 'Most Original Camera Name')
 
+    def testPictureManager(self):
+        frame = np.arange(256).reshape(32,8)
+        splitFrames, numberOfParts = PictureManager.splitPicture(frame,4)
+        self.assertEqual(math.ceil(32/4), numberOfParts)
+        self.assertEqual(len(splitFrames), numberOfParts)
+        combinedFrame = PictureManager.combinePicture(splitFrames)
+        self.assertTrue(np.array_equal(frame, combinedFrame))
+
     def testProcessType(self):
         self.assertEqual(ProcessType.Registry.value, 1)
         self.assertEqual(ProcessType.MainServer.value, 2)
@@ -566,6 +575,8 @@ class TestMessages(unittest.TestCase):
         self.assertIsNot(endpoint, None)
         self.assertEqual(endpoint.host, '127.0.0.3')
         self.assertEqual(endpoint.port, '4000')
+
+
 
 if __name__ == '__main__':
     unittest.main()
