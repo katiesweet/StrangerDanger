@@ -106,7 +106,7 @@ class BaseConversation(object):
                 logging.debug("missed message")
                 if self.missed_waits >= self.max_missed_waits:
                     self.resent_count += 1
-                    if self.resent_count >= self.max_resent_count:
+                    if self.resent_count > self.max_resent_count:
                         envelope = self.getLastMessageSent()
                         if envelope and  self.destructFunc:
                             logging.debug("destroying conversation, recipient endpoint not available")
