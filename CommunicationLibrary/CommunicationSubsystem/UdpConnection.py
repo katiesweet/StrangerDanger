@@ -34,8 +34,7 @@ class UdpConnection:
 
     def __receiveMessage(self, udpSocket):
         try:
-            #data, addr = udpSocket.recvfrom(1024)
-            data, addr = udpSocket.recvfrom(2048)
+            data, addr = udpSocket.recvfrom(32768)
             if data:
                 message = Message.decode(data)
                 #print "Received message: ", message, " from ", addr
