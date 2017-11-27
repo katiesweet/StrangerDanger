@@ -30,6 +30,8 @@ class Registry:
 
         self.mainServerLock = threading.Lock()
         self.knownMainServers = {}
+        self.knownCamerasLock = threading.Lock()
+        self.knownCameras = ["ShemCam", "SarahCam", "KatieCam"]
 
         self.shouldRun = True
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -58,7 +60,7 @@ class Registry:
         if isinstance(msg, RegisterRequest):
             self.__handleRegisterRequest(envelope)
         elif isinstance(msg, ServerListRequest):
-            self.__handleMainServerRequest(envelope)
+            self.__handleProcessListRequest(envelope)
         elif isinstance(msg, AliveReply):
             self.__handleAliveReponseOfMainServer(envelope)
 
@@ -67,6 +69,9 @@ class Registry:
         if processType == ProcessType.MainServer:
             with self.mainServerLock:
                 self.knownMainServers[envelope.endpoint] = True
+        # if processType == ProcessType.CameraProcess:
+        #     with self.knownCamerasLock:
+        #         self.knownCameras[envelope.]
 
         responseMessage = RegisterReply(True, Registry.getNextProcessId())
         responseMessage.setConversationId(envelope.message.conversationId)
@@ -85,9 +90,25 @@ class Registry:
                 arrayServers.append(endpoint)
         return arrayServers
 
+    def __handleProcessListRequest(self, envelope):
+        if envelope.message.processType == ProcessType.MainServer:
+            self.__handleMainServerRequest(envelope)
+        elif envelope.message.processType == ProcessType.CameraProcess:
+            self.__handleCameraListRequest(envelope)
+
     def __handleMainServerRequest(self, envelope):
         knownMainServers = self.__getArrayOfMainServers()
-        responseMessage = ServerListReply(True, knownMainServers)
+        responseMessage = ServerListReply(True, ProcessType.MainServer, knownMainServers)
+        responseMessage.setConversationId(envelope.message.conversationId)
+        outEnv = Envelope(envelope.endpoint, responseMessage)
+        with self.communicationsLock:
+            self.comm.sendMessage(outEnv)
+
+    def __handleCameraListRequest(self, envelope):
+        with self.knownCamerasLock:
+            knownCams = copy.deepcopy(self.knownCameras)
+
+        responseMessage = ServerListReply(True, ProcessType.CameraProcess, knownCams)
         responseMessage.setConversationId(envelope.message.conversationId)
         outEnv = Envelope(envelope.endpoint, responseMessage)
         with self.communicationsLock:
