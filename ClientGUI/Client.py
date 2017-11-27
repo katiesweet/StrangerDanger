@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../')
 from Tkinter import *
-from ttk import Separator
+from ttk import Separator, Scrollbar, Sizegrip
 
 import logging
 logging.basicConfig(filename="Client.log", level=logging.DEBUG, \
@@ -47,7 +47,24 @@ class Client:
         self.setupPictureReportSection()
 
         Label(self.master, text="Statistics Report", font=("Calibri", 16)).grid(row=2, column=2)
-        Separator(self.master, orient="horizontal").grid(row=8, columnspan=3, sticky="ew")
+        Separator(self.master, orient="horizontal").grid(row=8, columnspan=3, sticky="ew", pady=(10,0))
+        self.setupReportSection()
+
+    def setupReportSection(self):
+        reportFrame = Frame(self.master)
+        reportFrame.grid(row=9, column=0, columnspan=3, sticky="we")
+
+        scrollbar = Scrollbar(reportFrame)
+        mylist = Listbox(reportFrame, yscrollcommand = scrollbar.set, bd=0)
+        for line in range(100):
+           mylist.insert(END, "Report Item " + str(line))
+
+        mylist.pack(side = LEFT, fill = BOTH, padx=(10, 0), pady=10)
+        scrollbar.pack(side = LEFT, fill = Y, pady=10)
+        scrollbar.config( command = mylist.yview )
+
+        self.reportVisualFrame = Frame(reportFrame, bg="blue", width=640, height=480)
+        self.reportVisualFrame.pack(side=LEFT, fill=BOTH, padx=10, pady=10)
 
     def setupPictureReportSection(self):
         Label(self.master, text="Picture Report", font=("Calibri", 16)).grid(row=2, column=1)
