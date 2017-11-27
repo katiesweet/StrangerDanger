@@ -3,6 +3,7 @@ from AliveReply import *
 from MotionDetectedReply import *
 from RawQueryReply import *
 from RegisterReply import *
+from SavePicturePartReply import *
 from ServerListReply import *
 from StatisticsReply import *
 from SyncDataReply import *
