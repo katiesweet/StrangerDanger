@@ -159,7 +159,6 @@ class Client:
             print "Corresponding with main server: ", repr(server)
             logging.info("Now corresponding with main server:" + repr(server))
             self.mainServerAddress = server
-            print self.mainServerAddress, type(self.mainServerAddress)
             message = Envelope(self.mainServerAddress, AliveRequest())
             self.comm.sendMessage(message)
 

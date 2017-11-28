@@ -27,11 +27,12 @@ class Registry:
         self.communicationsLock = threading.Lock()
         self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)
 
-        self.mainServerLock = threading.Lock()
-        self.knownMainServers = {}
-
         self.databaseFile = "RegistryDatabase.json"
         self.databaseLock = threading.Lock()
+
+        self.mainServerLock = threading.Lock()
+        self.knownMainServers = self.__loadMainServers()
+        #self.knownMainServers = {}
 
         self.shouldRun = True
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -70,10 +71,9 @@ class Registry:
             with self.mainServerLock:
                 self.knownMainServers[envelope.endpoint] = True
         elif processType == ProcessType.CameraProcess:
-            #with self.knownCamerasLock:
-            self.addCameraName(envelope.message.name)
+            self.__addCameraName(envelope.message.name)
 
-        responseMessage = RegisterReply(True, self.getNextProcessId())
+        responseMessage = RegisterReply(True, self.__getNextProcessId())
         responseMessage.setConversationId(envelope.message.conversationId)
 
         outEnv = Envelope(envelope.endpoint, responseMessage)
@@ -105,9 +105,7 @@ class Registry:
             self.comm.sendMessage(outEnv)
 
     def __handleCameraListRequest(self, envelope):
-        #with self.knownCamerasLock:
-            #knownCams = copy.deepcopy(self.knownCameras)
-        knownCams = self.getCameraNames()
+        knownCams = self.__getCameraNames()
 
         responseMessage = ServerListReply(True, ProcessType.CameraProcess, knownCams)
         responseMessage.setConversationId(envelope.message.conversationId)
@@ -124,7 +122,7 @@ class Registry:
         while self.shouldRun:
             newTime = datetime.datetime.now()
             # if we haven't pinged in over 10 minutes
-            if newTime > previousPingTime + datetime.timedelta(seconds=10):
+            if newTime > previousPingTime + datetime.timedelta(seconds=600):
                 previousPingTime = newTime
                 self.__pingMainServers()
 
@@ -143,12 +141,13 @@ class Registry:
                     # Create messages to send to servers that were alive
                     self.knownMainServers[endpoint] = False
                     messagesToSend.append(Envelope(endpoint, AliveRequest()))
+            self.__updateMainServers()
 
         with self.communicationsLock:
             for envelope in messagesToSend:
                 self.comm.sendMessage(envelope)
 
-    def getNextProcessId(self):
+    def __getNextProcessId(self):
         with self.databaseLock:
             with open(self.databaseFile, "r") as database:
                 data = json.load(database)
@@ -163,13 +162,13 @@ class Registry:
 
             return nextProcessId
 
-    def getCameraNames(self):
+    def __getCameraNames(self):
         with self.databaseLock:
             with open(self.databaseFile) as database:
                 data = json.load(database)
                 return data["cameraNames"]
 
-    def addCameraName(self, name):
+    def __addCameraName(self, name):
         with self.databaseLock:
             with open(self.databaseFile, "r") as database:
                 data = json.load(database)
@@ -179,6 +178,30 @@ class Registry:
 
             with open(self.databaseFile, "w") as database:
                 json.dump(data, database)
+
+    def __updateMainServers(self):
+        with self.databaseLock:
+            with open(self.databaseFile, "r") as database:
+                data = json.load(database)
+
+            data["knownMainServers"] = []
+            for endpoint in self.knownMainServers:
+                data["knownMainServers"].append(endpoint)
+
+            with open(self.databaseFile, "w") as database:
+                json.dump(data, database)
+
+    def __loadMainServers(self):
+        with self.databaseLock:
+            with open(self.databaseFile, "r") as database:
+                data = json.load(database)
+
+            servers = {}
+            for server in data["knownMainServers"]:
+                servers[(server[0], server[1])] = True
+
+            return servers
+
 
 if __name__ == '__main__':
     Registry()
