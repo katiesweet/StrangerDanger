@@ -342,8 +342,8 @@ class CalculateStatsConversation(BaseConversation):
 
 
 class TransferMotionImageConversation(BaseConversation):
-    initiation_message = SaveMotionRequest
-    initiated = None
+    # initiation_message = SaveMotionRequest
+    # initiated = None
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         self.protocol = self.createProtocol()
@@ -357,80 +357,73 @@ class TransferMotionImageConversation(BaseConversation):
 
 class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
     initiated = True
+    initiation_message = SaveMotionRequest
 
     def createProtocol(self):
-        protocol = [{'type': SaveMotionRequest, 'envelope': None, 'outgoing': True, 'status': False},
+        protocol = [ #{'type': SaveMotionRequest, 'envelope': None, 'outgoing': False, 'status': False},
+                    {'type': SavePictureInfoRequest, 'envelope': None, 'outgoing': True, 'status': False},
                     {'type': MotionDetectedReply, 'envelope': None, 'outgoing': False, 'status': False}]
         return protocol
 
+    def get_next_picture_part(self):
+        pass
+
+    def handle_new_picture(self):
+        pass
+
     def should_handle(self, m_type, is_last):
-        handled = False
         if m_type == SaveMotionRequest:
-            handled = True
-            pass # split and send save picture info request message
-        if m_type == AckReply:
-            handled = True
+            # call handle_new_picture
+            pass # save frame, call split on the frame, update the protocol, get count and send save picture info request message
+        if m_type == SavePictureInfoReply:
             pass # send the next picture
-        if not handled:
-            super(InitiatedTransferMotionImageConversation, self).should_handle(m_type, is_last)
+        super(InitiatedTransferMotionImageConversation, self).should_handle(m_type, is_last)
 
     def handle(self, m_type, prev_envelope):
-        # can be overridden in the subclass or to added to still call super()
         message = None
-        handled = False
         if m_type == SaveMotionRequest:
-            handled = True
             pass # split and send save picture info request message
-        if m_type == AckReply:
-            handled = True
+        if m_type == SavePictureInfoReply:
             pass # get next picture message to send (save picture info request message)
         if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
             if envelope:
                 self.sendNewMessage(envelope)
-        if not handled:
-            super(InitiatedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
+        super(InitiatedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
 
     def __str__(self):
         return 'InitiatedTransferMotionImageConversation'
 
 class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
     initiated = False
+    initiation_message = SavePictureInfoReply
 
     def createProtocol(self):
-        protocol = [{'type': SaveMotionRequest, 'envelope': None, 'outgoing': False, 'status': False},
+        protocol = [{'type': SavePictureInfoRequest, 'envelope': None, 'outgoing': False, 'status': False},
+                    # {'type': SaveCombinedPictureRequest, 'envelope': None, 'outgoing': True, 'status': False},
                     {'type': MotionDetectedReply, 'envelope': None, 'outgoing': True, 'status': False}]
         return protocol
 
     def should_handle(self, m_type, is_last):
-        handled = False
-        if m_type == SaveMotionRequest:
-            handled = True
-            pass # split and send save picture info request message
-        if m_type == AckReply:
-            handled = True
+        if m_type == SavePictureInfoRequest:
+            pass # update protocol and send back an ack
+        if m_type == SavePicturePartRequest:
             pass # send the next picture
-        if not handled:
-            super(InitiatedTransferMotionImageConversation, self).should_handle(m_type, is_last)
+        super(ReceivedTransferMotionImageConversation, self).should_handle(m_type, is_last)
 
     def handle(self, m_type, prev_envelope):
-        # can be overridden in the subclass or to added to still call super()
         message = None
-        handled = False
         if m_type == SaveMotionRequest:
-            handled = True
             pass # split and send save picture info request message
         if m_type == AckReply:
-            handled = True
             pass # get next picture message to send (save picture info request message)
         if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
             if envelope:
                 self.sendNewMessage(envelope)
-        if not handled:
-            super(InitiatedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
+        super(ReceivedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
 
     def __str__(self):
         return 'ReceivedTransferMotionImageConversation'
@@ -461,8 +454,8 @@ class ConversationFactory:
         RawDataQueryConversation, ReceivedRequestStatisticsConversation,
         InitiatedRequestStatisticsConversation, SyncDataConversation,
         ReceivedMainServerListConversation, InitiatedMainServerListConversation,
-        CalculateStatsConversation, TransferMotionImageConversation,
-        GetStatusConversation, ]
+        CalculateStatsConversation, InitiatedTransferMotionImageConversation,
+        ReceivedTransferMotionImageConversation, GetStatusConversation, ]
 
     def __init__(self):
         return
