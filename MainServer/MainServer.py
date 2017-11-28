@@ -22,7 +22,6 @@ class MainServer:
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.shouldRun = True
         self.registrationServerAddress = ("34.209.66.116", 50000)
-        #self.registrationServerAddress = ("localhost", 50003)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -35,7 +34,6 @@ class MainServer:
     def __handleInput(self):
         var = raw_input("Enter something to quit.\n")
         self.shouldRun = False
-
 
     def sendRegisterRequest(self):
         message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.MainServer))
