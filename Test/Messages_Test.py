@@ -402,7 +402,7 @@ class TestMessages(unittest.TestCase):
 
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
-        self.assertEqual(decodedMsg.processType, ProcessType.MainServer
+        self.assertEqual(decodedMsg.processType, ProcessType.MainServer)
 
     def testSaveCombinedPictureRequest(self):
         picture = np.array([[0, 255], [255, 0]], np.uint8)
