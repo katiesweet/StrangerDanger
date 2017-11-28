@@ -7,6 +7,7 @@ import time
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
 from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
+from CommunicationLibrary.Messages.SharedObjects.PictureManager import PictureManager
 
 from multiprocessing import Value
 
@@ -347,6 +348,11 @@ class TransferMotionImageConversation(BaseConversation):
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         self.protocol = self.createProtocol()
+        self.picture = None
+        self.pictureParts = []
+        self.picPartsRecieved = 0
+        self.picPartsSent = 0
+        self.totalPicParts = 0
         super(TransferMotionImageConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
         logging.info("created TransferMotionImageConversation")
         return
@@ -354,43 +360,74 @@ class TransferMotionImageConversation(BaseConversation):
     def __str__(self):
         return 'TransferMotionImageConversation'
 
+    def update_protocol0(picCount, initiator, insert_index):
+        for r in range(0, picCount):
+            ack = {'type': SavePicturePartReply, 'envelope': None, 'outgoing': (not initiator), 'status': False}
+            self.protocol.insert(insert_index, ack)
+            spir = {'type': SavePicturePartRequest, 'envelope': None, 'outgoing': initiator, 'status': False}
+            self.protocol.insert(insert_index, spir)
+
 
 class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
     initiated = True
     initiation_message = SaveMotionRequest
 
     def createProtocol(self):
-        protocol = [ #{'type': SaveMotionRequest, 'envelope': None, 'outgoing': False, 'status': False},
+        protocol = [ 'type': SaveMotionRequest, 'envelope': None, 'outgoing': False, 'status': False},
                     {'type': SavePictureInfoRequest, 'envelope': None, 'outgoing': True, 'status': False},
+                    {'type': SavePictureInfoReply, 'envelope': None, 'outgoing': False, 'status': False},
                     {'type': MotionDetectedReply, 'envelope': None, 'outgoing': False, 'status': False}]
         return protocol
 
-    def get_next_picture_part(self):
-        pass
-
-    def handle_new_picture(self):
-        pass
+    def sendNewMessage(self, envelope):
+        """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
+        m_type, is_last = self.getCurrentMessage()
+        if m_type:
+            if isinstance(envelope.message, m_type):
+                if self.should_handle(m_type), is_last):
+                    if self.checkOffMessage(envelope):
+                        self.handle(m_type, envelope)
+                else:
+                    super(InitiatedTransferMotionImageConversation, self).sendNewMessage(envelope)
+                    return True
+        return False
 
     def should_handle(self, m_type, is_last):
         if m_type == SaveMotionRequest:
-            # call handle_new_picture
-            pass # save frame, call split on the frame, update the protocol, get count and send save picture info request message
+            return True
         if m_type == SavePictureInfoReply:
-            pass # send the next picture
+            return True
+        if m_type == SavePicturePartReply:
+            return True
+        if m_type == MotionDetectedReply and is_last:
+            return True
         super(InitiatedTransferMotionImageConversation, self).should_handle(m_type, is_last)
 
     def handle(self, m_type, prev_envelope):
         message = None
         if m_type == SaveMotionRequest:
-            pass # split and send save picture info request message
-        if m_type == SavePictureInfoReply:
-            pass # get next picture message to send (save picture info request message)
+            picture = prev_envelope.message.pictureInfo
+            sizeParts = 6 # QUESTION what should this be?
+            parts, part_count = PictureManager.splitPicture(picture.picture, sizeParts)
+            this.pictureParts = parts
+            totalPicParts = part_count
+            self.update_protocol(part_count, True, 3)
+            message = SavePictureInfoRequest(part_count, picture.timeStamp, picture.cameraName)
+        if m_type == SavePictureInfoReply or m_type == SavePicturePartReply:
+            if self.picPartsSent < self.totalPicParts:
+                picPart = self.pictureParts[self.picPartsSent]
+                message = SavePicturePartRequest(picPart)
+                picPartsSent += 1
+        if m_type == MotionDetectedReply:
+            if self.destructFunc:
+                self.destructFunc(prev_envelope.message.conversationId)
         if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
             if envelope:
                 self.sendNewMessage(envelope)
-        super(InitiatedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
+        else:
+            super(InitiatedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
 
     def __str__(self):
         return 'InitiatedTransferMotionImageConversation'
@@ -401,29 +438,47 @@ class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
 
     def createProtocol(self):
         protocol = [{'type': SavePictureInfoRequest, 'envelope': None, 'outgoing': False, 'status': False},
-                    # {'type': SaveCombinedPictureRequest, 'envelope': None, 'outgoing': True, 'status': False},
+                    {'type': SavePictureInfoReply, 'envelope': None, 'outgoing': True, 'status': False},
+                    {'type': SaveCombinedPictureRequest, 'envelope': None, 'outgoing': False, 'status': False},
                     {'type': MotionDetectedReply, 'envelope': None, 'outgoing': True, 'status': False}]
         return protocol
 
     def should_handle(self, m_type, is_last):
         if m_type == SavePictureInfoRequest:
-            pass # update protocol and send back an ack
+            return True
         if m_type == SavePicturePartRequest:
-            pass # send the next picture
+            return True
         super(ReceivedTransferMotionImageConversation, self).should_handle(m_type, is_last)
 
     def handle(self, m_type, prev_envelope):
         message = None
-        if m_type == SaveMotionRequest:
-            pass # split and send save picture info request message
-        if m_type == AckReply:
-            pass # get next picture message to send (save picture info request message)
+        if m_type == SavePictureInfoRequest:
+            self.cameraName = prev_envelope.message.cameraName
+            self.timeStamp = prev_envelope.message.timeStamp
+            self.totalPicParts = prev_envelope.message.numberOfParts
+            self.update_protocol(totalPicParts, False, 2)
+            message = SavePictureInfoReply(True)
+        if m_type == SavePicturePartRequest:
+            picture = prev_envelope.message.picturePart
+            self.pictureParts.append(picture)
+            self.picPartsRecieved += 1
+            if self.picPartsRecieved == self.totalPicParts:
+                picture = PictureManager.combinePicture(self.pictureParts)
+                pictureInfo = PictureInfo(cameraName=self.cameraName,
+                    timeStamp=self.timeStamp, picture=picture)
+                message = SaveCombinedPictureRequest(pictureInfo)
+                prev_envelope.message = message
+                self.receivedNewMessage(prev_envelope)
+                message = None
+            else:
+                message = SavePicturePartReply(True)
         if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
             if envelope:
                 self.sendNewMessage(envelope)
-        super(ReceivedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
+        else:
+            super(ReceivedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
 
     def __str__(self):
         return 'ReceivedTransferMotionImageConversation'
