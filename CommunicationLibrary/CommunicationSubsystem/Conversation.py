@@ -120,7 +120,6 @@ class BaseConversation(object):
         logging.debug('...finished waiting...')
 
     def sendNewMessage(self, envelope):
-        # QUESTION allow to send a message while timer is running? Not sure when that should ever happen.
         """Called from conversation manager for when the application wishes to send a message as a part of the conversation. """
         m_type, is_last = self.getCurrentMessage()
         if m_type:
@@ -159,7 +158,6 @@ class BaseConversation(object):
                     if self.getLastMessageReceived() == m_type:
                         if self.resendMessage():
                             return True
-                    # else QUESTION should we do anything else there?
         return False
 
     def __run(self):
@@ -434,7 +432,7 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
 
 class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
     initiated = False
-    initiation_message = SavePictureInfoReply
+    initiation_message = SavePictureInfoRequest
 
     def createProtocol(self):
         protocol = [{'type': SavePictureInfoRequest, 'envelope': None, 'outgoing': False, 'status': False},
@@ -456,7 +454,7 @@ class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
             self.cameraName = prev_envelope.message.cameraName
             self.timeStamp = prev_envelope.message.timeStamp
             self.totalPicParts = prev_envelope.message.numberOfParts
-            self.update_protocol(totalPicParts, False, 2)
+            self.update_protocol(self.totalPicParts, False, 2)
             message = SavePictureInfoReply(True)
         if m_type == SavePicturePartRequest:
             picture = prev_envelope.message.picturePart
