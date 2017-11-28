@@ -18,6 +18,7 @@ import datetime
 import time
 import thread
 import numpy as np
+import cPickle as pickle
 from threading import Thread
 import sys
 sys.path.append('../')
@@ -44,7 +45,6 @@ class Camera():
 
             self.shouldRun = True
             self.comm = CommunicationSubsystem.CommunicationSubsystem()
-            #self.registrationServerAddress = ("192.168.0.5", 50000)
             self.registrationServerAddress = ("34.209.66.116", 50000)
             self.mainServerList = []
             self.canStartSending = False
@@ -86,16 +86,16 @@ class Camera():
 
     def scaleAndBlurFrame(self, frame):
         frame = imutils.resize(frame, width=320)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (21, 21), 0)
-        return gray
+        self.gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        self.gray = cv2.GaussianBlur(self.gray, (21, 21), 0)
+        return self.gray
 
     def calcFrameDelta(self, gray, avg):
         # accumulate the weighted average between the current frame and
         # previous frames, then compute the difference between the current
         # frame and running average
-        cv2.accumulateWeighted(gray, avg, 0.5)
-        return cv2.absdiff(gray, cv2.convertScaleAbs(avg))
+        cv2.accumulateWeighted(self.gray, avg, 0.5)
+        return cv2.absdiff(self.gray, cv2.convertScaleAbs(avg))
 
     def findContoursAroundMotion(self, frameDelta):
         # threshold the delta image, dilate the thresholded image to fill
@@ -124,7 +124,7 @@ class Camera():
 
     
     def locateMotion(self, frame, gray, avg):
-        frameDelta = self.calcFrameDelta(gray, avg)
+        frameDelta = self.calcFrameDelta(self.gray, avg)
         contours = self.findContoursAroundMotion(frameDelta)
         return self.checkContours(frame, contours)
 
@@ -138,12 +138,8 @@ class Camera():
         return frame
 
     def handleIntruderDetected(self, frame, timestamp):
-        # send pictureInfo to main server list
-        print 'main server list = {}'.format(self.mainServerList)
         for endpoint in self.mainServerList:
-            print 'endpoint {}'.format(endpoint)
-            #pictureInfo = PictureInfo(frame, timestamp, self.name)
-            pictureInfo = PictureInfo(np.array([[0, 255, 0], [255, 0, 255]], np.uint32), timestamp, self.name)
+            pictureInfo = PictureInfo(frame, timestamp, self.name)
             self.sendSaveMotionRequest(endpoint, pictureInfo)
 
 
@@ -158,8 +154,8 @@ class Camera():
                 # check to see if the number of frames with consistent motion is
                 # high enough
                 if self.motionCounter >= self.conf["min_motion_frames"]:
+                    Thread(target=self.handleIntruderDetected,args=(self.gray,timestamp)).start()
                     #Thread(target=self.handleIntruderDetected,args=(frame,timestamp)).start()
-                    self.handleIntruderDetected(frame,timestamp)
                     # update the last uploaded timestamp and reset the motion
                     # counter
                     self.lastUploaded = timestamp
@@ -193,16 +189,16 @@ class Camera():
             self.text = "Unoccupied"
 
             # resize the frame, convert it to grayscale, and blur it
-            gray = self.scaleAndBlurFrame(frame)
+            self.gray = self.scaleAndBlurFrame(frame)
 
             # if the average frame is None, initialize it
             if avg is None:
                 logging.info("Starting background model...")
-                avg = gray.copy().astype("float")
+                avg = self.gray.copy().astype("float")
                 rawCapture.truncate(0)
                 continue
 
-            self.locateMotion(frame, gray, avg)
+            self.locateMotion(frame, self.gray, avg)
             self.updateFrame(frame, timestamp)
 
             # check to see if the frames should be displayed to screen
