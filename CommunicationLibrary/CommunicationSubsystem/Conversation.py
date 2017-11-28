@@ -281,12 +281,84 @@ class TransferMotionImageConversation(BaseConversation):
         logging.info("created TransferMotionImageConversation")
         return
 
+    def __str__(self):
+        return 'TransferMotionImageConversation'
+
+
+class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
+    initiated = True
+
     def createProtocol(self):
-        protocol = [{'type': SaveMotionRequest, 'status': False},
+        protocol = [{'type': SaveMotionRequest, 'status': True},
                     {'type': MotionDetectedReply, 'status': False}]
         return protocol
 
+    def should_handle(self, m_type, is_last):
+        handled = False
+        if m_type == SaveMotionRequest:
+            handled = True
+            pass # split and send save picture info request message
+        if m_type == AckReply:
+            handled = True
+            pass # send the next picture
+        if not handled:
+            super(InitiatedTransferMotionImageConversation, self).should_handle(m_type, is_last)
+
+    def handle(self, m_type, prev_envelope):
+        # can be overridden in the subclass or to added to still call super()
+        message = None
+        handled = False
+        if m_type == SaveMotionRequest:
+            handled = True
+            pass # split and send save picture info request message
+        if m_type == AckReply:
+            handled = True
+            pass # get next picture message to send (save picture info request message)
+        if message and prev_envelope:
+            message.setConversationId(prev_envelope.message.conversationId)
+            envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
+            if envelope:
+                self.sendNewMessage(envelope)
+        if not handled:
+            super(InitiatedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
+
     def __str__(self):
+        return 'InitiatedTransferMotionImageConversation'
+
+class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
+    initiated = False
+
+    def should_handle(self, m_type, is_last):
+        handled = False
+        if m_type == SaveMotionRequest:
+            handled = True
+            pass # split and send save picture info request message
+        if m_type == AckReply:
+            handled = True
+            pass # send the next picture
+        if not handled:
+            super(InitiatedTransferMotionImageConversation, self).should_handle(m_type, is_last)
+
+    def handle(self, m_type, prev_envelope):
+        # can be overridden in the subclass or to added to still call super()
+        message = None
+        handled = False
+        if m_type == SaveMotionRequest:
+            handled = True
+            pass # split and send save picture info request message
+        if m_type == AckReply:
+            handled = True
+            pass # get next picture message to send (save picture info request message)
+        if message and prev_envelope:
+            message.setConversationId(prev_envelope.message.conversationId)
+            envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
+            if envelope:
+                self.sendNewMessage(envelope)
+        if not handled:
+            super(InitiatedTransferMotionImageConversation, self).handle(m_type, prev_envelope)
+
+    def __str__(self):
+        return 'ReceivedTransferMotionImageConversation'
 
 
 class GetStatusConversation(BaseConversation):
@@ -306,6 +378,7 @@ class GetStatusConversation(BaseConversation):
 
     def __str__(self):
         return 'GetStatusConversation'
+
 
 
 class ConversationFactory:
