@@ -27,7 +27,6 @@ class BaseConversation(object):
         else:
             self.receivedNewMessage(envelope)
 
-        # self.waiting = False
         self.waiting = Value('b', False)
         self.missed_waits = 0
         self.max_missed_waits = 5
@@ -341,8 +340,7 @@ class CalculateStatsConversation(BaseConversation):
 
 
 class TransferMotionImageConversation(BaseConversation):
-    # initiation_message = SaveMotionRequest
-    # initiated = None
+    initiated = None
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         self.protocol = self.createProtocol()
@@ -364,6 +362,9 @@ class TransferMotionImageConversation(BaseConversation):
             self.protocol.insert(insert_index, ack)
             spir = {'type': SavePicturePartRequest, 'envelope': None, 'outgoing': initiator, 'status': False}
             self.protocol.insert(insert_index, spir)
+
+    def receivedNewMessage(self, envelope):
+        super(TransferMotionImageConversation, self).receivedNewMessage(envelope)
 
 
 class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
@@ -405,7 +406,7 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
         message = None
         if m_type == SaveMotionRequest:
             picture = prev_envelope.message.pictureInfo
-            sizeParts = 6 # QUESTION what should this be?
+            sizeParts = 30000
             parts, part_count = PictureManager.splitPicture(picture.picture, sizeParts)
             self.pictureParts = parts
             self.totalPicParts = part_count
@@ -429,6 +430,7 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
 
     def __str__(self):
         return 'InitiatedTransferMotionImageConversation'
+
 
 class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
     initiated = False
@@ -466,7 +468,7 @@ class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
                     timeStamp=self.timeStamp, picture=picture)
                 message = SaveCombinedPictureRequest(pictureInfo)
                 prev_envelope.message = message
-                self.receivedNewMessage(prev_envelope)
+                super(ReceivedTransferMotionImageConversation, self).receivedNewMessage(prev_envelope)
                 message = None
             else:
                 message = SavePicturePartReply(True)
