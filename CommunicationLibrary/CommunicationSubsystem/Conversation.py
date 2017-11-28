@@ -360,7 +360,7 @@ class TransferMotionImageConversation(BaseConversation):
     def __str__(self):
         return 'TransferMotionImageConversation'
 
-    def update_protocol0(picCount, initiator, insert_index):
+    def update_protocol(self, picCount, initiator, insert_index):
         for r in range(0, picCount):
             ack = {'type': SavePicturePartReply, 'envelope': None, 'outgoing': (not initiator), 'status': False}
             self.protocol.insert(insert_index, ack)
@@ -373,7 +373,7 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
     initiation_message = SaveMotionRequest
 
     def createProtocol(self):
-        protocol = [ 'type': SaveMotionRequest, 'envelope': None, 'outgoing': False, 'status': False},
+        protocol = [ {'type': SaveMotionRequest, 'envelope': None, 'outgoing': False, 'status': False},
                     {'type': SavePictureInfoRequest, 'envelope': None, 'outgoing': True, 'status': False},
                     {'type': SavePictureInfoReply, 'envelope': None, 'outgoing': False, 'status': False},
                     {'type': MotionDetectedReply, 'envelope': None, 'outgoing': False, 'status': False}]
@@ -384,7 +384,7 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
         m_type, is_last = self.getCurrentMessage()
         if m_type:
             if isinstance(envelope.message, m_type):
-                if self.should_handle(m_type), is_last):
+                if self.should_handle(m_type, is_last):
                     if self.checkOffMessage(envelope):
                         self.handle(m_type, envelope)
                 else:
@@ -409,15 +409,15 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
             picture = prev_envelope.message.pictureInfo
             sizeParts = 6 # QUESTION what should this be?
             parts, part_count = PictureManager.splitPicture(picture.picture, sizeParts)
-            this.pictureParts = parts
-            totalPicParts = part_count
-            self.update_protocol(part_count, True, 3)
+            self.pictureParts = parts
+            self.totalPicParts = part_count
+            super(InitiatedTransferMotionImageConversation,self).update_protocol(part_count, True, 3)
             message = SavePictureInfoRequest(part_count, picture.timeStamp, picture.cameraName)
         if m_type == SavePictureInfoReply or m_type == SavePicturePartReply:
             if self.picPartsSent < self.totalPicParts:
                 picPart = self.pictureParts[self.picPartsSent]
                 message = SavePicturePartRequest(picPart)
-                picPartsSent += 1
+                self.picPartsSent += 1
         if m_type == MotionDetectedReply:
             if self.destructFunc:
                 self.destructFunc(prev_envelope.message.conversationId)
