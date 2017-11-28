@@ -3,6 +3,7 @@ from threading import Thread
 import datetime
 import copy
 import time
+import json
 sys.path.append('../') # Start at root directory for all imports
 
 import logging
@@ -17,8 +18,6 @@ from CommunicationLibrary.Messages.RequestMessages import *
 from CommunicationLibrary.Messages.SharedObjects import *
 
 class Registry:
-    nextProcessId = 0
-    threadLock = threading.Lock()
 
     def __init__(self):
         logging.info("Creating registry process")
@@ -30,8 +29,9 @@ class Registry:
 
         self.mainServerLock = threading.Lock()
         self.knownMainServers = {}
-        self.knownCamerasLock = threading.Lock()
-        self.knownCameras = ["ShemCam", "SarahCam", "KatieCam"]
+
+        self.databaseFile = "RegistryDatabase.json"
+        self.databaseLock = threading.Lock()
 
         self.shouldRun = True
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -69,11 +69,11 @@ class Registry:
         if processType == ProcessType.MainServer:
             with self.mainServerLock:
                 self.knownMainServers[envelope.endpoint] = True
-        # if processType == ProcessType.CameraProcess:
-        #     with self.knownCamerasLock:
-        #         self.knownCameras[envelope.]
+        elif processType == ProcessType.CameraProcess:
+            #with self.knownCamerasLock:
+            self.addCameraName(envelope.message.name)
 
-        responseMessage = RegisterReply(True, Registry.getNextProcessId())
+        responseMessage = RegisterReply(True, self.getNextProcessId())
         responseMessage.setConversationId(envelope.message.conversationId)
 
         outEnv = Envelope(envelope.endpoint, responseMessage)
@@ -105,8 +105,9 @@ class Registry:
             self.comm.sendMessage(outEnv)
 
     def __handleCameraListRequest(self, envelope):
-        with self.knownCamerasLock:
-            knownCams = copy.deepcopy(self.knownCameras)
+        #with self.knownCamerasLock:
+            #knownCams = copy.deepcopy(self.knownCameras)
+        knownCams = self.getCameraNames()
 
         responseMessage = ServerListReply(True, ProcessType.CameraProcess, knownCams)
         responseMessage.setConversationId(envelope.message.conversationId)
@@ -147,14 +148,37 @@ class Registry:
             for envelope in messagesToSend:
                 self.comm.sendMessage(envelope)
 
+    def getNextProcessId(self):
+        with self.databaseLock:
+            with open(self.databaseFile, "r") as database:
+                data = json.load(database)
 
-    @staticmethod
-    def getNextProcessId():
-        with Registry.threadLock:
-            if Registry.nextProcessId == sys.maxint:
-                Registry.nextProcessId = 0
-            Registry.nextProcessId += 1
-        return Registry.nextProcessId
+            nextProcessId = data["nextProcessId"]
+            if nextProcessId == sys.maxint:
+                data["nextProcessId"] = 0
+            data["nextProcessId"] += 1
+
+            with open(self.databaseFile, "w") as database:
+                json.dump(data, database)
+
+            return nextProcessId
+
+    def getCameraNames(self):
+        with self.databaseLock:
+            with open(self.databaseFile) as database:
+                data = json.load(database)
+                return data["cameraNames"]
+
+    def addCameraName(self, name):
+        with self.databaseLock:
+            with open(self.databaseFile, "r") as database:
+                data = json.load(database)
+
+            if not name in data["cameraNames"]:
+                data["cameraNames"].append(name)
+
+            with open(self.databaseFile, "w") as database:
+                json.dump(data, database)
 
 if __name__ == '__main__':
     Registry()
