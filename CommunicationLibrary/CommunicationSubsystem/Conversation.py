@@ -118,11 +118,6 @@ class RegistrationConversation(BaseConversation):
 
     def __str__(self):
         return 'RegistrationConversation'
-# class InitiatedRegistrationConversation(RegistrationConversation):
-#     pass
-#
-# class ReceivedRegistrationConversation(RegistrationConversation):
-#     pass
 
 
 class SubscribeConversation(BaseConversation):
@@ -142,11 +137,6 @@ class SubscribeConversation(BaseConversation):
 
     def __str__(self):
         return 'SubscribeConversation'
-# class InitiatedSubscribeConversation(SubscribeConversation):
-#     pass
-#
-# class ReceivedSubscribeConversation(SubscribeConversation):
-#     pass
 
 
 class RequestStatisticsConversation(BaseConversation):
@@ -204,11 +194,6 @@ class RawDataQueryConversation(BaseConversation):
 
     def __str__(self):
         return 'RawDataQueryConversation'
-# class InitiatedRawDataQueryConversation(RawDataQueryConversation):
-#     pass
-#
-# class ReceivedRawDataQueryConversation(RawDataQueryConversation):
-#     pass
 
 
 class SyncDataConversation(BaseConversation):
@@ -228,11 +213,6 @@ class SyncDataConversation(BaseConversation):
 
     def __str__(self):
         return 'SyncDataConversation'
-# class InitiatedSyncDataConversation(SyncDataConversation):
-#     pass
-#
-# class ReceivedSyncDataConversation(SyncDataConversation):
-#     pass
 
 
 class MainServerListConversation(BaseConversation):
@@ -307,12 +287,6 @@ class TransferMotionImageConversation(BaseConversation):
         return protocol
 
     def __str__(self):
-        return 'TransferMotionImageConversation'
-# class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
-#     pass
-#
-# class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
-#     pass
 
 
 class GetStatusConversation(BaseConversation):
@@ -332,11 +306,6 @@ class GetStatusConversation(BaseConversation):
 
     def __str__(self):
         return 'GetStatusConversation'
-# class InitiatedGetStatusConversation(TransferMotionImageConversation):
-#     pass
-#
-# class ReceivedGetStatusConversation(TransferMotionImageConversation):
-#     pass
 
 
 class ConversationFactory:
