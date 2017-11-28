@@ -8,6 +8,7 @@ from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
 from CommunicationLibrary.CommunicationSubsystem.Conversation import *
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
+from CommunicationLibrary.Messages.SharedObjects import *
 
 class CommunicationSubsystem_Test(unittest.TestCase):
 
@@ -110,7 +111,7 @@ class CommunicationSubsystem_Test(unittest.TestCase):
 
     def test_create_incoming_conversation(self):
         cf = ConversationFactory()
-        s_message = ServerListRequest()
+        s_message = ServerListRequest(ProcessType.MainServer)
         env = Envelope(message=s_message, endpoint='endpoint')
         is_outgoing = True
         convo = cf.create_conversation(env, is_outgoing, Queue.Queue(), Queue.Queue(), None)
@@ -118,7 +119,7 @@ class CommunicationSubsystem_Test(unittest.TestCase):
 
     def test_create_outgoing_conversation(self):
         cf = ConversationFactory()
-        s_message = ServerListRequest()
+        s_message = ServerListRequest(ProcessType.MainServer)
         env = Envelope(message=s_message, endpoint='endpoint')
         is_outgoing = False
         convo = cf.create_conversation(env, is_outgoing, Queue.Queue(), Queue.Queue(), None)
@@ -178,7 +179,7 @@ class CommunicationSubsystem_Test(unittest.TestCase):
         env = Envelope(message=r_message, endpoint='endpoint')
         is_outgoing = True
         convo = cf.create_conversation(env, is_outgoing, Queue.Queue(), Queue.Queue(), None)
-        reply_s = ServerListRequest()
+        reply_s = ServerListRequest(ProcessType.MainServer)
         env2 = Envelope(message=reply_s, endpoint='endpoint')
         pro = [pro for pro in convo.protocol if pro['status'] == False]
         prev_length = len(pro)

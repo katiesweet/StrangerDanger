@@ -8,15 +8,15 @@ class MessageId:
     threadLock = threading.Lock()
 
     def __init__(self):
-        self.sequenceNumber = 0
-        self.processId = 0
+        self.sequenceNumber = MessageId.getNextSequenceNumber()
+        self.processId = LocalProcessInfo.getProcessId()
 
-    @staticmethod
-    def create():
-        messageId = MessageId()
-        messageId.processId = LocalProcessInfo.getProcessId()
-        messageId.sequenceNumber = MessageId.getNextSequenceNumber()
-        return messageId
+    # @staticmethod
+    # def create():
+    #     messageId = MessageId()
+    #     messageId.processId = LocalProcessInfo.getProcessId()
+    #     messageId.sequenceNumber = MessageId.getNextSequenceNumber()
+    #     return messageId
 
     @staticmethod
     def getNextSequenceNumber():
