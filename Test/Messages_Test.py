@@ -144,7 +144,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data.cameraName, 'Church of Sundberg')
 
     def testRegisterReplyEncodingDecoding(self):
-        nextProcessId = Registry.getNextProcessId()
+        nextProcessId = 6
         msg = RegisterReply(True, nextProcessId)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.processId, nextProcessId)
@@ -171,7 +171,7 @@ class TestMessages(unittest.TestCase):
             PublicEndPoint('127.0.0.3', '4000'),
             PublicEndPoint('127.0.0.5', '4060'),
         ]
-        msg = ServerListReply(True, servers)
+        msg = ServerListReply(True, ProcessType.MainServer, servers)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.success, True)
 
@@ -197,6 +197,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.success, True)
 
         self.assertIsNot(decodedMsg.servers, None)
+        self.assertEqual(decodedMsg.processType, ProcessType.MainServer)
         self.assertEqual(decodedMsg.servers[0].host, '127.0.0.3')
         self.assertEqual(decodedMsg.servers[0].port, '4000')
         self.assertEqual(decodedMsg.servers[1].host, '127.0.0.5')
@@ -401,7 +402,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.pictureInfo.cameraName, 'Ya boi Shem')
 
     def testServerListRequestEncodingDecoding(self):
-        msg = ServerListRequest()
+        msg = ServerListRequest(ProcessType.CameraProcess)
         self.assertIsNot(msg, None)
 
         msgId = msg.messageId
@@ -412,6 +413,7 @@ class TestMessages(unittest.TestCase):
         self.assertTrue(isinstance(decodedMsg, Message))
         self.assertTrue(isinstance(decodedMsg, Request))
         self.assertTrue(isinstance(decodedMsg, ServerListRequest))
+        self.assertEqual(decodedMsg.processType, ProcessType.CameraProcess)
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
 
@@ -538,7 +540,7 @@ class TestMessages(unittest.TestCase):
         self.assertEquals(LocalProcessInfo.getProcessId(),16)
 
     def testMessageId(self):
-        messageId = MessageId.create()
+        messageId = MessageId()
         self.assertIsNot(messageId, None)
         seqNum = messageId.sequenceNumber
         nextSeqNum = MessageId.getNextSequenceNumber()
