@@ -20,10 +20,7 @@ class Client:
         logging.info("Creating client process")
         self.master = master
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
-        #self.registrationServerAddress = ("34.209.72.192" , 50000)
-	    #self.registrationServerAddress = ("34.210.85.201" , 50000)
-        #self.registrationServerAddress = ("34.209.66.116" , 50000)
-        self.registrationServerAddress = ("localhost", 50003)
+        self.registrationServerAddress = ("34.209.66.116" , 50000)
         self.mainServerAddress = (None, None)
         self.cameraSelection = {}
         self.canStartSending = False
