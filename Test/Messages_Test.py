@@ -1,6 +1,7 @@
 #!/usr/bin/python2
 import unittest
 import numpy as np
+import math
 from datetime import datetime, date
 import sys
 sys.path.append("../")
@@ -165,6 +166,40 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.success, True)
 
         self.assertEqual(decodedMsg.processId, nextProcessId)
+
+    def testSavePictureInfoReplyEncodingDecoding(self):
+        msg = SavePictureInfoReply(True)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, SavePictureInfoReply))
+        self.assertEqual(decodedMsg.conversationId, convId)
+        self.assertEqual(decodedMsg.messageId, msgId)
+        self.assertEqual(decodedMsg.success, True)
+
+    def testSavePicturePartReplyEncodingDecoding(self):
+        msg = SavePicturePartReply(True, 20)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        self.assertEqual(msg.partNumber, 20)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, SavePicturePartReply))
+        self.assertEqual(decodedMsg.conversationId, convId)
+        self.assertEqual(decodedMsg.messageId, msgId)
+        self.assertEqual(decodedMsg.success, True)
+        self.assertEqual(decodedMsg.partNumber, 20)
 
     def testServerListReplyEncodingDecoding(self):
         servers = [
@@ -370,6 +405,37 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.processType, ProcessType.MainServer)
 
+    def testSaveCombinedPictureRequest(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        pictureInfo = PictureInfo(picture, timeStamp, 'ShemCam')
+        msg = SaveCombinedPictureRequest(pictureInfo)
+        self.assertIsNot(msg, None)
+
+        self.assertIsNot(msg.pictureInfo, None)
+        self.assertTrue(np.array_equal(msg.pictureInfo.picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.pictureInfo.timeStamp, timeStamp)
+        self.assertEqual(msg.pictureInfo.cameraName, 'ShemCam')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, SaveCombinedPictureRequest))
+
+        self.assertEqual(decodedMsg.conversationId, convId)
+        self.assertEqual(decodedMsg.messageId, msgId)
+
+        self.assertIsNot(decodedMsg.pictureInfo, None)
+        self.assertTrue(np.array_equal(decodedMsg.pictureInfo.picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(decodedMsg.pictureInfo.timeStamp, timeStamp)
+        self.assertEqual(decodedMsg.pictureInfo.cameraName, 'ShemCam')
+
     def testSaveMotionRequestEncodingDecoding(self):
         picture = np.array([[0, 255], [255, 0]], np.uint8)
         timeStamp = datetime.now()
@@ -400,6 +466,63 @@ class TestMessages(unittest.TestCase):
         self.assertTrue(np.array_equal(decodedMsg.pictureInfo.picture, np.array([[0, 255], [255, 0]], np.uint8)))
         self.assertEqual(decodedMsg.pictureInfo.timeStamp, timeStamp)
         self.assertEqual(decodedMsg.pictureInfo.cameraName, 'Ya boi Shem')
+
+    def testSavePictureInfoRequestEncodingDecoding(self):
+        timeStamp = datetime.now()
+        msg = SavePictureInfoRequest(30, timeStamp, 'KatieCam')
+        self.assertIsNot(msg, None)
+
+        self.assertEqual(msg.numberOfParts, 30)
+        self.assertEqual(msg.timeStamp, timeStamp)
+        self.assertEqual(msg.cameraName, 'KatieCam')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, SavePictureInfoRequest))
+
+        self.assertEqual(decodedMsg.conversationId, convId)
+        self.assertEqual(decodedMsg.messageId, msgId)
+
+        self.assertEqual(decodedMsg.numberOfParts, 30)
+        self.assertEqual(decodedMsg.timeStamp, timeStamp)
+        self.assertEqual(decodedMsg.cameraName, 'KatieCam')
+
+    def testSavePicturePartRequestEncodingDecoding(self):
+        part = np.array([[0, 255], [255, 0]], np.uint8)
+        picturePart = PicturePart(part, 7, 'SarahCam')
+        msg = SavePicturePartRequest(picturePart)
+        self.assertIsNot(msg, None)
+
+        self.assertIsNot(msg.picturePart, None)
+        self.assertTrue(np.array_equal(msg.picturePart.picturePart, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.picturePart.partNumber, 7)
+        self.assertEqual(msg.picturePart.cameraName, 'SarahCam')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, SavePicturePartRequest))
+
+        self.assertEqual(decodedMsg.conversationId, convId)
+        self.assertEqual(decodedMsg.messageId, msgId)
+
+        self.assertIsNot(decodedMsg.picturePart, None)
+        self.assertTrue(np.array_equal(decodedMsg.picturePart.picturePart, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(decodedMsg.picturePart.partNumber, 7)
+        self.assertEqual(decodedMsg.picturePart.cameraName, 'SarahCam')
 
     def testServerListRequestEncodingDecoding(self):
         msg = ServerListRequest(ProcessType.CameraProcess)
@@ -556,6 +679,24 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(data.timeStamp, timeStamp)
         self.assertEqual(data.cameraName, 'Most Original Camera Name')
 
+    def testPictureManager(self):
+        frame = np.arange(256).reshape(32,8)
+        splitFrames, numberOfParts = PictureManager.splitPicture(frame,4)
+        self.assertEqual(math.ceil(32/4), numberOfParts)
+        self.assertEqual(len(splitFrames), numberOfParts)
+        combinedFrame = PictureManager.combinePicture(splitFrames)
+        self.assertTrue(np.array_equal(frame, combinedFrame))
+
+    def testPicturePart(self):
+        part = np.arange(200).reshape(20,10)
+        partNumber = 8
+        cameraName = 'Bob Ross'
+        picturePart = PicturePart(part, partNumber, cameraName)
+        self.assertIsNot(picturePart, None)
+        self.assertTrue(np.array_equal(picturePart.picturePart, np.arange(200).reshape(20,10)))
+        self.assertEqual(picturePart.partNumber, partNumber)
+        self.assertEqual(picturePart.cameraName, cameraName)
+
     def testProcessType(self):
         self.assertEqual(ProcessType.Registry.value, 1)
         self.assertEqual(ProcessType.MainServer.value, 2)
@@ -568,6 +709,8 @@ class TestMessages(unittest.TestCase):
         self.assertIsNot(endpoint, None)
         self.assertEqual(endpoint.host, '127.0.0.3')
         self.assertEqual(endpoint.port, '4000')
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -35,7 +35,6 @@ class MainServer:
         var = raw_input("Enter something to quit.\n")
         self.shouldRun = False
 
-
     def sendRegisterRequest(self):
         message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.MainServer))
         self.comm.sendMessage(message)

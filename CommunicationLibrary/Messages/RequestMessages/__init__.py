@@ -2,7 +2,10 @@ from AliveRequest import *
 from CalcStatisticsRequest import *
 from RawQueryRequest import *
 from RegisterRequest import *
+from SaveCombinedPictureRequest import *
 from SaveMotionRequest import *
+from SavePictureInfoRequest import *
+from SavePicturePartRequest import *
 from ServerListRequest import *
 from StatisticsRequest import *
 from SubscribeRequest import *
