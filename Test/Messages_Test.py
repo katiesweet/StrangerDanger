@@ -680,9 +680,10 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(data.cameraName, 'Most Original Camera Name')
 
     def testPictureManager(self):
-        frame = np.arange(256).reshape(32,8)
-        splitFrames, numberOfParts = PictureManager.splitPicture(frame,4)
-        self.assertEqual(math.ceil(32/4), numberOfParts)
+        #frame = np.arange(256).reshape(32,8)
+	frame = np.arange(92160).reshape(320,288)
+        splitFrames, numberOfParts = PictureManager.splitPicture(frame,40)
+        self.assertEqual(math.ceil(320/40), numberOfParts)
         self.assertEqual(len(splitFrames), numberOfParts)
         combinedFrame = PictureManager.combinePicture(splitFrames)
         self.assertTrue(np.array_equal(frame, combinedFrame))

@@ -21,7 +21,8 @@ class MainServer:
         logging.info('Creating Main Server')
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.shouldRun = True
-        self.registrationServerAddress = ("34.209.66.116", 50000)
+        #self.registrationServerAddress = ("34.209.66.116", 50000)
+	self.registrationServerAddress = ("192.168.0.9", 50000)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -56,6 +57,8 @@ class MainServer:
             self.handleRegisterReply(envelope)
         elif isinstance(envelope.message, SaveMotionRequest):
             self.handleSaveMotionRequest(envelope)
+    	elif isinstance(envelope.message, SaveCombinedPictureRequest):
+    	    self.handleSaveMotionRequest(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
@@ -69,7 +72,7 @@ class MainServer:
         timeStamp = pictureInfo.timeStamp
         cameraName = pictureInfo.cameraName
         print 'Saving picture from {} at {}'.format(cameraName, timeStamp)
-        scipy.misc.imsave('{}_{}.jpg'.format(cameraName, timeStamp))
+        scipy.misc.imsave('{}_{}.jpg'.format(cameraName, timeStamp), picture)
         self.sendMotionDetectedReply(envelope.endpoint, True)
 
 if __name__ == '__main__':
