@@ -1,6 +1,6 @@
 {
   "show_video": true,
-  "min_upload_seconds": 10.0,
+  "min_upload_seconds": 20.0,
   "min_motion_frames": 5,
   "camera_warmup_time": 3.5,
   "delta_thresh": 5,

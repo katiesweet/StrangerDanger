@@ -42,10 +42,12 @@ class Camera():
             ap.add_argument("-n", "--name", required=True, help="unique name for camera")
             ap.add_argument("-c", "--conf", required=True, help="path to the JSON configuration file")
             self.args = vars(ap.parse_args())
+            self.name = self.args["name"]
 
             self.shouldRun = True
             self.comm = CommunicationSubsystem.CommunicationSubsystem()
-            self.registrationServerAddress = ("34.209.66.116", 50000)
+            #self.registrationServerAddress = ("34.209.66.116", 50000)
+            self.registrationServerAddress = ("localhost", 50000)
             self.mainServerList = []
             self.canStartSending = False
 
@@ -60,12 +62,12 @@ class Camera():
             pass
 
     def sendRegisterRequest(self):
-        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.CameraProcess))
+        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.CameraProcess, self.name))
         self.comm.sendMessage(message)
         logging.debug("Sending Register Request message " + repr(message))
 
     def sendServerListRequest(self):
-        message = Envelope(self.registrationServerAddress, ServerListRequest())
+        message = Envelope(self.registrationServerAddress, ServerListRequest(ProcessType.MainServer))
         self.comm.sendMessage(message)
         logging.debug("Sending Server List Request message " + repr(message))
 
@@ -75,7 +77,6 @@ class Camera():
         logging.debug("Sending Save Motion Request message " + repr(message))
 
     def setupCameraStream(self):
-        self.name = self.args["name"]
         self.conf = json.load(open(self.args["conf"]))
         
         # initialize the camera and grab a reference to the raw camera capture
@@ -87,6 +88,7 @@ class Camera():
     def scaleAndBlurFrame(self, frame):
         frame = imutils.resize(frame, width=320)
         self.gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        self.goodGray = self.gray
         self.gray = cv2.GaussianBlur(self.gray, (21, 21), 0)
         return self.gray
 
@@ -154,7 +156,8 @@ class Camera():
                 # check to see if the number of frames with consistent motion is
                 # high enough
                 if self.motionCounter >= self.conf["min_motion_frames"]:
-                    Thread(target=self.handleIntruderDetected,args=(self.gray,timestamp)).start()
+                    #Thread(target=self.handleIntruderDetected,args=(self.gray,timestamp)).start()
+                    self.handleIntruderDetected(self.goodGray, timestamp)
                     #Thread(target=self.handleIntruderDetected,args=(frame,timestamp)).start()
                     # update the last uploaded timestamp and reset the motion
                     # counter
