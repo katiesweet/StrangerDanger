@@ -476,7 +476,7 @@ class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
                 super(ReceivedTransferMotionImageConversation, self).receivedNewMessage(prev_envelope)
                 message = None
             else:
-                message = SavePicturePartReply(True,picture.partNumber)
+                message = SavePicturePartReply(True, picture.partNumber)
         if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)

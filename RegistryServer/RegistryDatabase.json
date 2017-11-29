@@ -1,1 +1,1 @@
-{"cameraNames": ["SarahCam", "ShemCam", "KatieCam"], "knownMainServers": [], "nextProcessId": 12}
+{"nextProcessId": 86, "knownMainServers": [["192.168.0.7", 44166], ["192.168.0.7", 58751], ["192.168.0.7", 41800]], "cameraNames": ["SarahCam", "ShemCam", "KatieCam", ""]}
