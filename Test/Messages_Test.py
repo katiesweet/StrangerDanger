@@ -249,6 +249,26 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, True)
 
+    def testGetPictureReplyEncodingDecoding(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        msg = GetPictureReply(True, picture)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        self.assertTrue(np.array_equal(msg.picture, picture))
+
+        msgId = msg.messageId
+        convId= msg.conversationId
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Reply))
+        self.assertTrue(isinstance(decodedMsg, GetPictureReply))
+        self.assertEqual(decodedMsg.conversationId, convId)
+        self.assertEqual(decodedMsg.messageId, msgId)
+        self.assertEqual(decodedMsg.success, True)
+        self.assertTrue(np.array_equal(decodedMsg.picture, picture))
+
     ######### Request Messages #########
     def testAliveRequestEncodingDecoding(self):
         msg = AliveRequest()
@@ -312,17 +332,20 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data[0].cameraName, 'Bacon')
 
     def testRawQueryRequestEncodingDecoding(self):
+        isMostRecent = False
         timePeriod = DateRange(date(2017, 5, 25), date(2017, 6, 30))
         cameras = ['1', '126', '6']
-        msg = RawQueryRequest(timePeriod, cameras)
+        msg = RawQueryRequest(False, timePeriod, cameras)
         self.assertIsNot(msg, None)
-        self.assertEqual(msg.timePeriod, timePeriod)
+
+        self.assertEqual(msg.mostRecent, isMostRecent)
+        self.assertEqual(msg.timePeriod.startDate, timePeriod.startDate)
+        self.assertEqual(msg.timePeriod.endDate, timePeriod.endDate)
 
         self.assertIsNot(msg.cameras, None)
         self.assertEqual(msg.cameras[0], '1')
         self.assertEqual(msg.cameras[1], '126')
         self.assertEqual(msg.cameras[2], '6')
-
 
         msgId = msg.messageId
         convId = msg.conversationId
@@ -508,6 +531,28 @@ class TestMessages(unittest.TestCase):
         self.assertTrue(np.array_equal(decodedMsg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
         self.assertEqual(decodedMsg.data[0].timeStamp, timeStamp)
         self.assertEqual(decodedMsg.data[0].cameraName, 'Cat Cam')
+
+    def testGetPictureRequestEncodingDecoding(self):
+        camName = "ShemCam"
+        timeStamp = date(2017,10,31)
+
+        msg = GetPictureRequest(camName, timeStamp)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.camName, camName)
+        self.assertEqual(msg.timeStamp, timeStamp)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        decodedMsg = Message.decode(encodedMsg)
+        self.assertIsNot(decodedMsg, None)
+        self.assertTrue(isinstance(decodedMsg, Message))
+        self.assertTrue(isinstance(decodedMsg, Request))
+        self.assertTrue(isinstance(decodedMsg, GetPictureRequest))
+        self.assertEqual(decodedMsg.conversationId, convId)
+        self.assertEqual(decodedMsg.messageId, msgId)
+        self.assertEqual(decodedMsg.camName, camName)
+        self.assertEqual(decodedMsg.timeStamp, timeStamp)
 
     ########## SharedObjects ############
     def testActivityReport(self):
