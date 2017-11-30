@@ -359,12 +359,16 @@ class TransferMotionImageConversation(BaseConversation):
         return 'TransferMotionImageConversation'
 
     def update_protocol(self, picCount, initiator, insert_index):
-        for r in range(0, picCount):
-            ack = {'type': SavePicturePartReply, 'envelope': None, 'outgoing': (not initiator), 'status': False}
-            self.protocol.insert(insert_index, ack)
+        # every picture part except for the last needs a request and ack
+        for r in range(0, picCount-1):
             spir = {'type': SavePicturePartRequest, 'envelope': None, 'outgoing': initiator, 'status': False}
             self.protocol.insert(insert_index, spir)
-        self.protocol.pop(insert_index+((picCount-1)*2)+1)
+            ack = {'type': SavePicturePartReply, 'envelope': None, 'outgoing': (not initiator), 'status': False}
+            self.protocol.insert(insert_index, ack)
+        # for the last picture part, it just needs one request and the App Layer will handle the ack
+        spir = {'type': SavePicturePartRequest, 'envelope': None, 'outgoing': initiator, 'status': False}
+        self.protocol.insert(insert_index, spir)
+        
 
 
     def receivedNewMessage(self, envelope):

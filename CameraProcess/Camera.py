@@ -39,10 +39,10 @@ class Camera():
 
         try:
             ap = argparse.ArgumentParser()
-            ap.add_argument("-n", "--name", required=True, help="unique name for camera")
             ap.add_argument("-c", "--conf", required=True, help="path to the JSON configuration file")
             self.args = vars(ap.parse_args())
-            self.name = self.args["name"]
+            self.conf = json.load(open(self.args["conf"]))
+            self.name = self.conf["camera_name"]
 
             self.shouldRun = True
             self.comm = CommunicationSubsystem.CommunicationSubsystem()
@@ -77,8 +77,6 @@ class Camera():
         logging.debug("Sending Save Motion Request message " + repr(message))
 
     def setupCameraStream(self):
-        self.conf = json.load(open(self.args["conf"]))
-        
         # initialize the camera and grab a reference to the raw camera capture
         camera = PiCamera()
         camera.resolution = tuple(self.conf["resolution"])
@@ -140,6 +138,8 @@ class Camera():
         return frame
 
     def handleIntruderDetected(self, frame, timestamp):
+        print 'Intruder Detected, sending image'
+        logging.info('Intruder Detected, sending image')
         for endpoint in self.mainServerList:
             pictureInfo = PictureInfo(frame, timestamp, self.name)
             self.sendSaveMotionRequest(endpoint, pictureInfo)
@@ -158,7 +158,6 @@ class Camera():
                 if self.motionCounter >= self.conf["min_motion_frames"]:
                     #Thread(target=self.handleIntruderDetected,args=(self.gray,timestamp)).start()
                     self.handleIntruderDetected(self.goodGray, timestamp)
-                    #Thread(target=self.handleIntruderDetected,args=(frame,timestamp)).start()
                     # update the last uploaded timestamp and reset the motion
                     # counter
                     self.lastUploaded = timestamp
