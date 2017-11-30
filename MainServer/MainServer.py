@@ -72,7 +72,9 @@ class MainServer:
         timeStamp = pictureInfo.timeStamp
         cameraName = pictureInfo.cameraName
         print 'Saving picture from {} at {}'.format(cameraName, timeStamp)
-        scipy.misc.imsave('{}_{}.jpg'.format(cameraName, timeStamp), picture)
+	logging.info('Saving picture from {} at {}'.format(cameraName, timeStamp))
+	fileName = '{}_{}.jpg'.format(cameraName, timeStamp).replace(" ", "")
+        scipy.misc.imsave(fileName, picture)
         self.sendMotionDetectedReply(envelope.endpoint, True)
 
 if __name__ == '__main__':
