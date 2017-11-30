@@ -36,7 +36,6 @@ class MainServer:
         var = raw_input("Enter something to quit.\n")
         self.shouldRun = False
 
-
     def sendRegisterRequest(self):
         message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.MainServer))
         self.comm.sendMessage(message)
@@ -60,6 +59,8 @@ class MainServer:
             self.handleRegisterReply(envelope)
         elif isinstance(envelope.message, SaveMotionRequest):
             self.handleSaveMotionRequest(envelope)
+    	elif isinstance(envelope.message, SaveCombinedPictureRequest):
+    	    self.handleSaveMotionRequest(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId

@@ -27,6 +27,7 @@ class UdpConnection:
             #    envelope.endpoint
             logging.debug("Sending message " + repr(envelope.message) \
                 + " to " + repr(envelope.endpoint))
+            #print 'length of message is {}'.format(len(encodedMessage))
             udpSocket.sendto(encodedMessage, envelope.endpoint)
         except socket.error, msg:
             logging.error("Could not send message to server.")
@@ -34,8 +35,7 @@ class UdpConnection:
 
     def __receiveMessage(self, udpSocket):
         try:
-            #data, addr = udpSocket.recvfrom(1024)
-            data, addr = udpSocket.recvfrom(2048)
+            data, addr = udpSocket.recvfrom(32768)
             if data:
                 message = Message.decode(data)
                 #print "Received message: ", message, " from ", addr
