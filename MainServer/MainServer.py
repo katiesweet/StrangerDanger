@@ -22,7 +22,7 @@ class MainServer:
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.shouldRun = True
         #self.registrationServerAddress = ("34.209.66.116", 50000)
-	self.registrationServerAddress = ("192.168.0.9", 50000)
+        self.registrationServerAddress = ("144.39.254.27", 50000)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -41,8 +41,10 @@ class MainServer:
         self.comm.sendMessage(message)
         logging.debug("Sending message " + repr(message))
 
-    def sendMotionDetectedReply(self, cameraEndpoint, success):
-        message = Envelope(cameraEndpoint, MotionDetectedReply(success))
+    def sendMotionDetectedReply(self, cameraEndpoint, success, convoId):
+        reply = MotionDetectedReply(success)
+        reply.setConversationId(convoId)
+        message = Envelope(cameraEndpoint, reply)
         self.comm.sendMessage(message)
         logging.debug("Sending MotionDetectedReply message " + repr(message))
 
@@ -68,14 +70,13 @@ class MainServer:
 
     def handleSaveMotionRequest(self, envelope):
         pictureInfo = envelope.message.pictureInfo
+        convoId = envelope.message.conversationId
         picture = pictureInfo.picture
         timeStamp = pictureInfo.timeStamp
         cameraName = pictureInfo.cameraName
         print 'Saving picture from {} at {}'.format(cameraName, timeStamp)
-	logging.info('Saving picture from {} at {}'.format(cameraName, timeStamp))
-	fileName = '{}_{}.jpg'.format(cameraName, timeStamp).replace(" ", "")
-        scipy.misc.imsave(fileName, picture)
-        self.sendMotionDetectedReply(envelope.endpoint, True)
+        scipy.misc.imsave('{}_{}.jpg'.format(cameraName, timeStamp))
+        self.sendMotionDetectedReply(envelope.endpoint, True, convoId)
 
 if __name__ == '__main__':
     MainServer()
