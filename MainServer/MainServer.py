@@ -90,8 +90,11 @@ class MainServer:
         picture = pictureInfo.picture
         timeStamp = pictureInfo.timeStamp
         cameraName = pictureInfo.cameraName
-        photoStorageLocation = 'PhotoDatabase/{}_{}.jpg'.format(cameraName, timeStamp)
-        photoStorageLocation = photoStorageLocation.replace(" ", "_")
+
+        rawFileName = cameraName + "_" + timeStamp
+        rawFileName = rawFileName.replace(" ", "_")
+        rawFileName = rawFileName.replace(".", ":")
+        photoStorageLocation = 'PhotoDatabase/{}.jpg'.format(rawFileName)
         print 'Saving picture from {} at {}'.format(cameraName, timeStamp)
         scipy.misc.imsave(photoStorageLocation, picture)
         self.writeDatabaseEntry(cameraName, timeStamp, photoStorageLocation)
