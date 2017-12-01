@@ -5,7 +5,7 @@ sys.path.append('../')
 from threading import Thread
 import time
 import scipy.misc
-
+import json
 import logging
 logging.basicConfig(filename="MainServer.log", level=logging.DEBUG, \
     format='%(asctime)s - %(levelname)s - %(module)s - Thread: %(thread)d -\
@@ -21,8 +21,10 @@ class MainServer:
         logging.info('Creating Main Server')
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.shouldRun = True
+        self.databaseFile = "PhotoDatabase.json"
         #self.registrationServerAddress = ("34.209.66.116", 50000)
-        self.registrationServerAddress = ("144.39.254.27", 50000)
+        #self.registrationServerAddress = ("144.39.254.27", 50000)
+        self.registrationServerAddress = ("192.168.0.23", 50000)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -68,14 +70,25 @@ class MainServer:
         logging.info('Got ProcessID: {}'.format(processId))
         self.canStartSending = True
 
+    def writeDatabaseEntry(self, cameraName, timestamp, photoStorageLocation):
+        with open(self.databaseFile, "r") as database:
+            data = json.load(database)
+        jsonObject = {"camName" : cameraName, "timeStamp" : str(timestamp), "picLocation" : photoStorageLocation}
+        data["pictures"].append(jsonObject)
+        with open(self.databaseFile, "w") as database:
+            json.dump(data, database)
+
+
     def handleSaveMotionRequest(self, envelope):
         pictureInfo = envelope.message.pictureInfo
         convoId = envelope.message.conversationId
         picture = pictureInfo.picture
         timeStamp = pictureInfo.timeStamp
         cameraName = pictureInfo.cameraName
+        photoStorageLocation = 'PhotoDatabase/{}_{}.jpg'.format(cameraName, timeStamp)
         print 'Saving picture from {} at {}'.format(cameraName, timeStamp)
-        scipy.misc.imsave('{}_{}.jpg'.format(cameraName, timeStamp))
+        scipy.misc.imsave(photoStorageLocation, picture)
+        self.writeDatabaseEntry(cameraName, timeStamp, photoStorageLocation)
         self.sendMotionDetectedReply(envelope.endpoint, True, convoId)
 
 if __name__ == '__main__':
