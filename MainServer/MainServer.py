@@ -10,6 +10,8 @@ import logging
 logging.basicConfig(filename="MainServer.log", level=logging.DEBUG, \
     format='%(asctime)s - %(levelname)s - %(module)s - Thread: %(thread)d -\
     %(message)s')
+import cv2
+import datetime
 
 from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 from CommunicationLibrary.Messages.RequestMessages import * # AliveRequest
@@ -63,6 +65,10 @@ class MainServer:
             self.handleSaveMotionRequest(envelope)
     	elif isinstance(envelope.message, SaveCombinedPictureRequest):
     	    self.handleSaveMotionRequest(envelope)
+        elif isinstance(envelope.message, RawQueryRequest):
+            self.handleRawQueryRequest(envelope)
+        elif isinstance(envelope.message, GetPictureRequest):
+            self.handleGetPictureRequest(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
@@ -78,7 +84,6 @@ class MainServer:
         with open(self.databaseFile, "w") as database:
             json.dump(data, database)
 
-
     def handleSaveMotionRequest(self, envelope):
         pictureInfo = envelope.message.pictureInfo
         convoId = envelope.message.conversationId
@@ -91,6 +96,57 @@ class MainServer:
         scipy.misc.imsave(photoStorageLocation, picture)
         self.writeDatabaseEntry(cameraName, timeStamp, photoStorageLocation)
         self.sendMotionDetectedReply(envelope.endpoint, True, convoId)
+
+    def handleRawQueryRequest(self, envelope):
+        with open(self.databaseFile, "r") as database:
+            camData = json.load(database)
+        if envelope.message.mostRecent:
+            handleMostRecentDataRequest(envelope, camData)
+        else:
+            handleDataRangeRequest(envelope, camData)
+
+    def handleMostRecentDataRequest(envelope, camData):
+        validCams = envelope.message.cameras
+        mostRecentTime = None
+
+        responseData = []
+        mostRecentEntry = None
+        for data in camData:
+            if data["camName"] in validCams:
+                time = datetime.datetime.strptime(data["timeStamp"], "%Y-%m-%d %H:%M:%S.%f")
+                if not mostRecentTime or time > mostRecentTime:
+                    mostRecentTime = time
+                    mostRecentEntry = data
+        responseData.append(mostRecentEntry)
+
+        msg = RawQueryReply(True, responseData)
+        msg.setConversationId(envelope.message.conversationId)
+        self.comm.sendMessage(Envelope(envelope.endpoint, msg))
+
+    def handleDataRangeRequest(self, envelope, camName):
+        validCams = envelope.message.cameras
+        timePeriod = envelope.message.timePeriod
+        startTime = datetime.datetime.strptime(timePeriod.startDate, "%Y-%m-%d %H:%M:%S.%f")
+        endTime = datetime.datetime.strptime(timePeriod.endDate, "%Y-%m-%d %H:%M:%S.%f")
+
+        responseData = []
+        for data in camData:
+            if data["camName"] in validCams:
+                time = datetime.datetime.strptime(data["timeStamp"], "%Y-%m-%d %H:%M:%S.%f")
+                if startTime <= time and time <= endTime:
+                    responseData.append(data)
+
+        msg = RawQueryReply(True, responseData)
+        msg.setConversationId(envelope.message.conversationId)
+        self.comm.sendMessage(Envelope(envelope.endpoint, msg))
+
+    def handleGetPictureRequest(envelope):
+        picLocation = envelope.message.picLocation
+
+        img = cv2.imread(picLocation)
+        msg = GetPictureReply(True, img)
+        msg.setConversationId(envelope.message.conversationId)
+        self.comm.sendMessage(Envelope(envelope.endpoint, msg))
 
 if __name__ == '__main__':
     MainServer()
