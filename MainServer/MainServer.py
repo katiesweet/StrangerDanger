@@ -93,7 +93,7 @@ class MainServer:
 
         rawFileName = cameraName + "_" + timeStamp
         rawFileName = rawFileName.replace(" ", "_")
-        rawFileName = rawFileName.replace(".", ":")
+        rawFileName = rawFileName.replace(".", "/")
         photoStorageLocation = 'PhotoDatabase/{}.jpg'.format(rawFileName)
         print 'Saving picture from {} at {}'.format(cameraName, timeStamp)
         scipy.misc.imsave(photoStorageLocation, picture)
