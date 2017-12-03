@@ -336,6 +336,8 @@ class ReceivedRawDataQueryConversation(RawDataQueryConversation):
                 if self.should_handle(m_type, is_last):
                     if self.checkOffMessage(envelope):
                         self.handle(m_type, envelope)
+                        if is_last and self.destructFunc:
+                            self.destructFunc(envelope.message.conversationId)
                 else:
                     super(ReceivedRawDataQueryConversation, self).sendNewMessage(envelope)
                 return True
@@ -500,6 +502,8 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
                 if self.should_handle(m_type, is_last):
                     if self.checkOffMessage(envelope):
                         self.handle(m_type, envelope)
+                        if is_last and self.destructFunc:
+                            self.destructFunc(envelope.message.conversationId)
                 else:
                     super(InitiatedTransferMotionImageConversation, self).sendNewMessage(envelope)
                     return True
