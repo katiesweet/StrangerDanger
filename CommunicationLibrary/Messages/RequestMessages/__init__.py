@@ -10,3 +10,4 @@ from ServerListRequest import *
 from StatisticsRequest import *
 from SubscribeRequest import *
 from SyncDataRequest import *
+from GetPictureRequest import *

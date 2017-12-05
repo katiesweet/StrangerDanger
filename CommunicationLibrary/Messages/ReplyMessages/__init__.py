@@ -8,3 +8,4 @@ from SavePicturePartReply import *
 from ServerListReply import *
 from StatisticsReply import *
 from SyncDataReply import *
+from GetPictureReply import *

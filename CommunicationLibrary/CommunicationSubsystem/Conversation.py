@@ -8,6 +8,8 @@ from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
 from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
 from CommunicationLibrary.Messages.SharedObjects.PictureManager import PictureManager
+from CommunicationLibrary.Messages.SharedObjects.PicturePart import PicturePart
+from CommunicationLibrary.Messages.SharedObjects.PictureInfo import PictureInfo
 
 from multiprocessing import Value
 
@@ -29,9 +31,9 @@ class BaseConversation(object):
 
         self.waiting = Value('b', False)
         self.missed_waits = 0
-        self.max_missed_waits = 5
+        self.max_missed_waits = 10
         self.resent_count = 0
-        self.max_resent_count = 3
+        self.max_resent_count = 8
 
         self.shouldRun = True
         thread.start_new_thread(self.__run, ())
@@ -478,11 +480,17 @@ class TransferMotionImageConversation(BaseConversation):
         return 'TransferMotionImageConversation'
 
     def update_protocol(self, picCount, initiator, insert_index):
-        for r in range(0, picCount):
-            ack = {'type': SavePicturePartReply, 'envelope': None, 'outgoing': (not initiator), 'status': False}
-            self.protocol.insert(insert_index, ack)
+        # every picture part except for the last needs a request and ack
+        for r in range(0, picCount-1):
             spir = {'type': SavePicturePartRequest, 'envelope': None, 'outgoing': initiator, 'status': False}
             self.protocol.insert(insert_index, spir)
+            ack = {'type': SavePicturePartReply, 'envelope': None, 'outgoing': (not initiator), 'status': False}
+            self.protocol.insert(insert_index, ack)
+        # for the last picture part, it just needs one request and the App Layer will handle the ack
+        spir = {'type': SavePicturePartRequest, 'envelope': None, 'outgoing': initiator, 'status': False}
+        self.protocol.insert(insert_index, spir)
+        
+
 
     def receivedNewMessage(self, envelope):
         super(TransferMotionImageConversation, self).receivedNewMessage(envelope)
@@ -529,7 +537,7 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
         message = None
         if m_type == SaveMotionRequest:
             picture = prev_envelope.message.pictureInfo
-            sizeParts = 30000
+            sizeParts = 20
             parts, part_count = PictureManager.splitPicture(picture.picture, sizeParts)
             self.pictureParts = parts
             self.totalPicParts = part_count
@@ -538,6 +546,7 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
         if m_type == SavePictureInfoReply or m_type == SavePicturePartReply:
             if self.picPartsSent < self.totalPicParts:
                 picPart = self.pictureParts[self.picPartsSent]
+                picPart = PicturePart(picPart, self.picPartsSent, '')
                 message = SavePicturePartRequest(picPart)
                 self.picPartsSent += 1
         if m_type == MotionDetectedReply:
@@ -583,7 +592,7 @@ class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
             message = SavePictureInfoReply(True)
         if m_type == SavePicturePartRequest:
             picture = prev_envelope.message.picturePart
-            self.pictureParts.append(picture)
+            self.pictureParts.append(picture.picturePart)
             self.picPartsRecieved += 1
             if self.picPartsRecieved == self.totalPicParts:
                 picture = PictureManager.combinePicture(self.pictureParts)
@@ -594,7 +603,7 @@ class ReceivedTransferMotionImageConversation(TransferMotionImageConversation):
                 super(ReceivedTransferMotionImageConversation, self).receivedNewMessage(prev_envelope)
                 message = None
             else:
-                message = SavePicturePartReply(True)
+                message = SavePicturePartReply(True, picture.partNumber)
         if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
