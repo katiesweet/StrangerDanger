@@ -14,7 +14,7 @@ class CommunicationSubsystem :
     def sendMessage(self, envelope):
         """ Method used by the application to send message """
         logging.info("Sending message to conversation manager " + \
-            repr(envelope))
+            repr(envelope.message))
         self.conversationManager.sendMessage(envelope)
 
     def getMessage(self):

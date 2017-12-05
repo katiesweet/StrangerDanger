@@ -356,7 +356,7 @@ class ReceivedGetPictureConversation(GetPictureConversation):
         message = None
         if m_type == GetPictureReply:
             picture = prev_envelope.message.picture
-            sizeParts = 30000
+            sizeParts = 20
             parts, part_count = PictureManager.splitPicture(picture, sizeParts)
             self.pictureParts = parts
             self.totalPicParts = part_count
