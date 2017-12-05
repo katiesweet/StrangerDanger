@@ -245,8 +245,8 @@ class ReceivedRequestStatisticsConversation(RequestStatisticsConversation):
         return 'ReceivedRequestStatisticsConversation'
 
 
-class RawDataQueryConversation(BaseConversation):
-    initiation_message = RawQueryRequest
+class GetPictureConversation(BaseConversation):
+    initiation_message = GetPictureRequest
     initiated = None
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
@@ -256,8 +256,8 @@ class RawDataQueryConversation(BaseConversation):
         self.picPartsRecieved = 0
         self.picPartsSent = 0
         self.totalPicParts = 0
-        super(RawDataQueryConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
-        logging.info("created RawDataQueryConversation")
+        super(GetPictureConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created GetPictureConversation")
         return
 
     def update_protocol(self, picCount, initiator, insert_index):
@@ -268,17 +268,16 @@ class RawDataQueryConversation(BaseConversation):
             self.protocol.insert(insert_index, spir)
 
     def __str__(self):
-        return 'RawDataQueryConversation'
+        return 'GetPictureConversation'
 
-
-class InitiatedRawDataQueryConversation(RawDataQueryConversation):
+class InitiatedGetPictureConversation(GetPictureConversation):
     initiated = True
 
     def createProtocol(self):
-        protocol = [{'type': RawQueryRequest, 'envelope': None, 'outgoing': True, 'status': False},
+        protocol = [{'type': GetPictureRequest, 'envelope': None, 'outgoing': True, 'status': False},
                     {'type': SavePictureInfoRequest, 'envelope': None, 'outgoing': False, 'status': False},
                     {'type': SavePictureInfoReply, 'envelope': None, 'outgoing': True, 'status': False},
-                    {'type': RawQueryReply, 'envelope': None, 'outgoing': True, 'status': False}]
+                    {'type': GetPictureReply, 'envelope': None, 'outgoing': True, 'status': False}]
         return protocol
 
     def should_handle(self, m_type, is_last):
@@ -286,13 +285,11 @@ class InitiatedRawDataQueryConversation(RawDataQueryConversation):
             return True
         if m_type == SavePicturePartRequest:
             return True
-        super(InitiatedRawDataQueryConversation, self).should_handle(m_type, is_last)
+        super(InitiatedGetPictureConversation, self).should_handle(m_type, is_last)
 
     def handle(self, m_type, prev_envelope):
         message = None
         if m_type == SavePictureInfoRequest:
-            self.cameraName = prev_envelope.message.cameraName
-            self.timeStamp = prev_envelope.message.timeStamp
             self.totalPicParts = prev_envelope.message.numberOfParts
             self.update_protocol(self.totalPicParts, False, 3)
             message = SavePictureInfoReply(True)
@@ -300,39 +297,35 @@ class InitiatedRawDataQueryConversation(RawDataQueryConversation):
             picture = prev_envelope.message.picturePart
             self.pictureParts.append(picture)
             self.picPartsRecieved += 1
+            message = SavePicturePartReply(True, self.picPartsRecieved)
+            if prev_envelope:
+                message.setConversationId(prev_envelope.message.conversationId)
+                envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
+                if envelope:
+                    self.sendNewMessage(envelope)
             if self.picPartsRecieved == self.totalPicParts:
                 picture = PictureManager.combinePicture(self.pictureParts)
-                pictureInfo = PictureInfo(cameraName=self.cameraName,
-                    timeStamp=self.timeStamp, picture=picture)
-                message = SaveCombinedPictureRequest(pictureInfo)
+                message = GetPictureReply(True, picture)
                 prev_envelope.message = message
-                super(InitiatedRawDataQueryConversation, self).receivedNewMessage(prev_envelope)
+                super(InitiatedGetPictureConversation, self).receivedNewMessage(prev_envelope)
                 message = None
-            else:
-                message = SavePicturePartReply(True)
+            message = None
         if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
             if envelope:
                 self.sendNewMessage(envelope)
         else:
-            super(InitiatedRawDataQueryConversation, self).handle(m_type, prev_envelope)
+            super(InitiatedGetPictureConversation, self).handle(m_type, prev_envelope)
 
-# client will send a getpicturerequest
-# main server gets it and sends back a getpicture reply
-# app layer will catch that and package it and resend
-# other app layer will catch it on the other the side and repackage the picture and
-# send up a getpicture reply message to the client
-
-class ReceivedRawDataQueryConversation(RawDataQueryConversation):
+class ReceivedGetPictureConversation(GetPictureConversation):
     initiated = False
 
     def createProtocol(self):
-        protocol = [{'type': RawQueryRequest, 'envelope': None, 'outgoing': False, 'status': False},
-                    {'type': SaveMotionRequest, 'envelope': None, 'outgoing': True, 'status': False}, #catch this one and don't actually send
+        protocol = [{'type': GetPictureRequest, 'envelope': None, 'outgoing': False, 'status': False},
+                    {'type': GetPictureReply, 'envelope': None, 'outgoing': True, 'status': False},
                     {'type': SavePictureInfoRequest, 'envelope': None, 'outgoing': True, 'status': False},
-                    {'type': SavePictureInfoReply, 'envelope': None, 'outgoing': False, 'status': False},
-                    {'type': RawQueryReply, 'envelope': None, 'outgoing': False, 'status': False}]
+                    {'type': SavePictureInfoReply, 'envelope': None, 'outgoing': False, 'status': False}]
         return protocol
 
     def sendNewMessage(self, envelope):
@@ -346,46 +339,63 @@ class ReceivedRawDataQueryConversation(RawDataQueryConversation):
                         if is_last and self.destructFunc:
                             self.destructFunc(envelope.message.conversationId)
                 else:
-                    super(ReceivedRawDataQueryConversation, self).sendNewMessage(envelope)
+                    super(ReceivedGetPictureConversation, self).sendNewMessage(envelope)
                 return True
         return False
 
     def should_handle(self, m_type, is_last):
-        if m_type == SaveMotionRequest:
+        if m_type == GetPictureReply:
             return True
         if m_type == SavePictureInfoReply:
             return True
         if m_type == SavePicturePartReply:
             return True
-        if m_type == RawQueryReply and is_last:
-            return True
-        super(ReceivedRawDataQueryConversation, self).should_handle(m_type, is_last)
+        super(ReceivedGetPictureConversation, self).should_handle(m_type, is_last)
 
     def handle(self, m_type, prev_envelope):
         message = None
-        if m_type == SaveMotionRequest:
-            picture = prev_envelope.message.pictureInfo
+        if m_type == GetPictureReply:
+            picture = prev_envelope.message.picture
             sizeParts = 30000
-            parts, part_count = PictureManager.splitPicture(picture.picture, sizeParts)
+            parts, part_count = PictureManager.splitPicture(picture, sizeParts)
             self.pictureParts = parts
             self.totalPicParts = part_count
-            super(ReceivedRawDataQueryConversation,self).update_protocol(part_count, True, 4)
-            message = SavePictureInfoRequest(part_count, picture.timeStamp, picture.cameraName)
+            super(ReceivedGetPictureConversation,self).update_protocol(part_count, True, 4)
+            message = SavePictureInfoRequest(part_count, None, None)
         if m_type == SavePictureInfoReply or m_type == SavePicturePartReply:
             if self.picPartsSent < self.totalPicParts:
                 picPart = self.pictureParts[self.picPartsSent]
                 message = SavePicturePartRequest(picPart)
                 self.picPartsSent += 1
-        if m_type == RawQueryReply:
-            if self.destructFunc:
-                self.destructFunc(prev_envelope.message.conversationId)
+                if self.picPartsSent == self.totalPicParts:
+                    if self.destructFunc:
+                        self.destructFunc(prev_envelope.message.conversationId)
         if message and prev_envelope:
             message.setConversationId(prev_envelope.message.conversationId)
             envelope = Envelope(message=message, endpoint=prev_envelope.endpoint)
             if envelope:
                 self.sendNewMessage(envelope)
         else:
-            super(ReceivedRawDataQueryConversation, self).handle(m_type, prev_envelope)
+            super(ReceivedGetPictureConversation, self).handle(m_type, prev_envelope)
+
+
+class RawDataQueryConversation(BaseConversation):
+    initiation_message = RawQueryRequest
+    initiated = None
+
+    def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
+        self.protocol = self.createProtocol(envelopeIsOutgoing)
+        super(RawDataQueryConversation, self).__init__(envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc)
+        logging.info("created RawDataQueryConversation")
+        return
+
+    def createProtocol(self, is_outgoing):
+        protocol = [{'type': RawQueryRequest, 'envelope': None, 'outgoing': is_outgoing, 'status': False},
+                    {'type': RawQueryReply, 'envelope': None, 'outgoing': (not is_outgoing), 'status': False}]
+        return protocol
+
+    def __str__(self):
+        return 'RawDataQueryConversation'
 
 
 class SyncDataConversation(BaseConversation):
@@ -489,7 +499,7 @@ class TransferMotionImageConversation(BaseConversation):
         # for the last picture part, it just needs one request and the App Layer will handle the ack
         spir = {'type': SavePicturePartRequest, 'envelope': None, 'outgoing': initiator, 'status': False}
         self.protocol.insert(insert_index, spir)
-        
+
 
 
     def receivedNewMessage(self, envelope):
@@ -638,12 +648,12 @@ class GetStatusConversation(BaseConversation):
 
 class ConversationFactory:
     CONVERSATION_TYPES = [RegistrationConversation, SubscribeConversation,
-        InitiatedRawDataQueryConversation, ReceivedRawDataQueryConversation,
+        InitiatedGetPictureConversation, ReceivedGetPictureConversation,
         ReceivedRequestStatisticsConversation, GetStatusConversation,
         InitiatedRequestStatisticsConversation, SyncDataConversation,
         ReceivedMainServerListConversation, InitiatedMainServerListConversation,
         CalculateStatsConversation, InitiatedTransferMotionImageConversation,
-        ReceivedTransferMotionImageConversation]
+        ReceivedTransferMotionImageConversation, RawDataQueryConversation]
 
     def __init__(self):
         return

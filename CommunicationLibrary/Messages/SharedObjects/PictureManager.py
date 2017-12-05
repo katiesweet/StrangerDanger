@@ -9,7 +9,7 @@ class PictureManager:
         # rows = picture.shape[0]
         # numberOfParts = int(math.ceil(rows/sizeOfParts))
         # splitFrames = np.array_split(picture, numberOfParts)
-        return [1,2,3,4,5], 5
+        return [1,2], 2
         # return splitFrames, numberOfParts
 
     @staticmethod
