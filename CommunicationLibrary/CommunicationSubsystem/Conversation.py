@@ -316,6 +316,11 @@ class InitiatedRawDataQueryConversation(RawDataQueryConversation):
         else:
             super(InitiatedRawDataQueryConversation, self).handle(m_type, prev_envelope)
 
+# client will send a getpicturerequest
+# main server gets it and sends back a getpicture reply
+# app layer will catch that and package it and resend
+# other app layer will catch it on the other the side and repackage the picture and
+# send up a getpicture reply message to the client
 
 class ReceivedRawDataQueryConversation(RawDataQueryConversation):
     initiated = False
