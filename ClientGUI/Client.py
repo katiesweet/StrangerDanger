@@ -21,7 +21,7 @@ class Client:
         logging.info("Creating client process")
         self.master = master
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
-        self.registrationServerAddress = ("localhost" , 52312)
+        self.registrationServerAddress = ("localhost" , 52000)
         #self.registrationServerAddress = ("192.168.0.23" , 50000)
         self.mainServerAddress = (None, None)
         self.cameraSelection = {}
@@ -120,8 +120,10 @@ class Client:
     def displayPicture(self, picture):
         im = Image.fromarray(picture)
         imgtk = ImageTk.PhotoImage(image=im)
+        print "Start issue"
         self.reportVisualLabel.configure(image=imgtk)
         self.reportVisualLabel.image = imgtk
+        print "End issue"
 
     def setupDummyList(self):
         camData = [{"camName": "KatieCam", "timeStamp": "ts1", "picLocation": "location1"},{"camName": "SarahCam", "timeStamp": "ts2", "picLocation": "location2"}]
@@ -144,6 +146,8 @@ class Client:
             if timePeriod:
                 msg = RawQueryRequest(mostRecent, timePeriod, cameras)
                 self.sendToMainServer(msg)
+        self.reportVisualLabel.configure(text="", font=("Calibri", 16))
+        self.reportVisualLabel.image = None
 
     def generateStatsReport(self):
         selectedReports = self.getSelectedStatsReports()
@@ -151,6 +155,8 @@ class Client:
         timePeriod = self.getDateRange()
         if timePeriod:
             print selectedReports, cameras, timePeriod.startDate, timePeriod.endDate
+        self.reportVisualLabel.configure(text="", font=("Calibri", 16), image=None)
+        self.reportVisualLabel.image = None
 
     def getSelectedCameras(self):
         cameras = []
@@ -277,6 +283,9 @@ class Client:
         reportItem = self.mylist.get(index)
         pictureLocation = self.picReportItems[reportItem]
         self.sendToMainServer(GetPictureRequest(pictureLocation))
+        if self.reportVisualLabel.image != None:
+            self.reportVisualLabel.configure(text="Loading...", font=("Calibri", 16))
+            self.reportVisualLabel.image = None
         # envelope = Envelope(self.mainServerAddress, GetPictureRequest(pictureLocation))
         # #print envelope.message
         # self.comm.sendMessage(envelope)

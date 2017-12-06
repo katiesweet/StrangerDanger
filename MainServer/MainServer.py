@@ -27,7 +27,7 @@ class MainServer:
         #self.registrationServerAddress = ("34.209.66.116", 50000)
         #self.registrationServerAddress = ("144.39.254.27", 50000)
         #self.registrationServerAddress = ("192.168.0.23", 50000)
-        self.registrationServerAddress = ("localhost", 52312)
+        self.registrationServerAddress = ("localhost", 52000)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -147,7 +147,7 @@ class MainServer:
     def handleGetPictureRequest(self, envelope):
         picLocation = envelope.message.picLocation
 
-        img = cv2.imread(picLocation)
+        img = cv2.imread(picLocation, 0)
         msg = GetPictureReply(True, img)
         msg.setConversationId(envelope.message.conversationId)
         self.comm.sendMessage(Envelope(envelope.endpoint, msg))
