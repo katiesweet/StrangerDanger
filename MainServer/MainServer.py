@@ -27,7 +27,7 @@ class MainServer:
         #self.registrationServerAddress = ("34.209.66.116", 50000)
         #self.registrationServerAddress = ("144.39.254.27", 50000)
         #self.registrationServerAddress = ("192.168.0.23", 50000)
-        self.registrationServerAddress = ("localhost", 52312)
+        self.registrationServerAddress = ("192.168.0.4", 52312)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
