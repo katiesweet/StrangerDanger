@@ -21,7 +21,7 @@ class Registry:
 
     def __init__(self):
         logging.info("Creating registry process")
-        myEndpoint = ('', 50000) # Good for both local and external connections
+        myEndpoint = ('', 52312) # Good for both local and external connections
 
         self.communicationsLock = threading.Lock()
         self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)
@@ -121,7 +121,7 @@ class Registry:
         while self.shouldRun:
             newTime = datetime.datetime.now()
             # if we haven't pinged in over 10 minutes
-            if newTime > previousPingTime + datetime.timedelta(seconds=600):
+            if newTime > previousPingTime + datetime.timedelta(seconds=10):
                 previousPingTime = newTime
                 self.__pingMainServers()
 

@@ -2,6 +2,9 @@ import sys
 sys.path.append('../')
 from Tkinter import *
 from ttk import Separator, Scrollbar, Sizegrip
+from PIL import Image, ImageTk
+import cv2
+import DateEntry
 
 import logging
 logging.basicConfig(filename="Client.log", level=logging.DEBUG, \
@@ -11,8 +14,6 @@ logging.basicConfig(filename="Client.log", level=logging.DEBUG, \
 from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 from CommunicationLibrary.Messages.RequestMessages import * # AliveRequest
 from CommunicationLibrary.Messages.ReplyMessages import *
-# from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
-# from CommunicationLibrary.Messages.SharedObjects.ProcessType import ProcessType
 from CommunicationLibrary.Messages.SharedObjects import *
 
 class Client:
@@ -20,9 +21,11 @@ class Client:
         logging.info("Creating client process")
         self.master = master
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
-        self.registrationServerAddress = ("34.209.66.116" , 50000)
+        self.registrationServerAddress = ("localhost" , 52312)
+        #self.registrationServerAddress = ("192.168.0.23" , 50000)
         self.mainServerAddress = (None, None)
         self.cameraSelection = {}
+        self.picReportItems = {}
         self.canStartSending = False
         self.setupGui()
 
@@ -38,58 +41,103 @@ class Client:
         Label(self.master, text="Stranger Danger: Distributed Home Monitoring System", font=("Calibri", 20)).grid(columnspan=3)
         Separator(self.master, orient="horizontal").grid(row=1, columnspan=3, sticky="ew")
 
-        Label(self.master, text="Select Camera(s)", font=("Calibri", 16)).grid(row=2)
-        #rowIndex = self.handleCameraListReply("dummy")
-
+        self.setupCameraSection()
         self.setupPictureReportSection()
-
-        Label(self.master, text="Statistics Report", font=("Calibri", 16)).grid(row=2, column=2)
-        Separator(self.master, orient="horizontal").grid(row=8, columnspan=3, sticky="ew", pady=(10,0))
+        self.setupStatisticsReportSection()
+        Separator(self.master, orient="horizontal").grid(row=3, columnspan=3, sticky="ew", pady=(10,0))
         self.setupReportSection()
+
+    def setupCameraSection(self):
+        self.cameraFrame = Frame(self.master)
+        self.cameraFrame.grid(row=2, sticky='n', padx=50)
+
+        Label(self.cameraFrame, text="Select Camera(s)", font=("Calibri", 16)).pack()
+
+    def setupPictureReportSection(self):
+        picReportSection = Frame(self.master)
+        picReportSection.grid(row=2, column=1)
+
+        Label(picReportSection, text="Picture Report", font=("Calibri", 16)).pack()
+
+        self.picReportChoice = IntVar()
+        Radiobutton(picReportSection, text="Most Recent", variable=self.picReportChoice, value=1).pack(anchor='w')
+
+        Radiobutton(picReportSection, text="Date Range:", variable=self.picReportChoice, value=2).pack(anchor='w')
+
+        self.startDate = DateEntry.DateEntry(picReportSection, "Start Date: ")
+        self.startDate.pack()
+        self.endDate = DateEntry.DateEntry(picReportSection, "End Date:  ")
+        self.endDate.pack()
+
+        Button(picReportSection, text="GenerateReport", command=self.generatePicReport).pack()
+
+
+    def setupStatisticsReportSection(self):
+        statsFrame = Frame(self.master)
+        statsFrame.grid(row=2, column=2, sticky='n', padx=50)
+
+        Label(statsFrame, text="Statistics Report", font=("Calibri", 16)).pack()
 
     def setupReportSection(self):
         reportFrame = Frame(self.master)
-        reportFrame.grid(row=9, column=0, columnspan=3, sticky="we")
+        reportFrame.grid(row=4, column=0, columnspan=3, sticky="we")
 
         scrollbar = Scrollbar(reportFrame)
-        mylist = Listbox(reportFrame, yscrollcommand = scrollbar.set, bd=0)
-        for line in range(100):
-           mylist.insert(END, "Report Item " + str(line))
-
-        mylist.pack(side = LEFT, fill = BOTH, padx=(10, 0), pady=10)
+        self.mylist = Listbox(reportFrame, yscrollcommand = scrollbar.set, bd=0, width=30)
+        self.mylist.bind('<<ListboxSelect>>', self.selectedReportItem)
+        #self.setupDummyList()
+        self.mylist.pack(side = LEFT, fill = BOTH, padx=(10, 0), pady=10)
         scrollbar.pack(side = LEFT, fill = Y, pady=10)
-        scrollbar.config( command = mylist.yview )
+        scrollbar.config( command = self.mylist.yview )
 
-        self.reportVisualFrame = Frame(reportFrame, bg="blue", width=640, height=480)
-        self.reportVisualFrame.pack(side=LEFT, fill=BOTH, padx=10, pady=10)
+        picFrame = Frame(reportFrame, width=320, height=288)
+        picFrame.pack_propagate(0)
+        self.reportVisualLabel = Label(picFrame)
+        self.reportVisualLabel.pack()
+        #self.loadImageFromFile()
+        picFrame.pack(side=LEFT, fill=BOTH, padx=10, pady=10)
 
-    def setupPictureReportSection(self):
-        Label(self.master, text="Picture Report", font=("Calibri", 16)).grid(row=2, column=1)
-        self.picReportChoice = IntVar()
-        Radiobutton(self.master, text="Most Recent", variable=self.picReportChoice, value=1).grid(row=3, column=1, sticky="w")
+    def loadImageFromFile(self):
+        path = "/Users/katiesweet/Desktop/KatieCam_2017-11-30 21:19:05.192955.jpg"
+        image = cv2.imread(path)
+        self.displayPicture(image)
 
-        Radiobutton(self.master, text="Date (MM/DD/YY) Range:", variable=self.picReportChoice, value=2).grid(row=4, column=1, sticky="w")
-        self.startDate = Text(self.master, relief=GROOVE, height=1, width=10, borderwidth=2)
-        self.startDate.insert(END, "StartDate")
-        self.startDate.grid(row=5, column=1)
-        self.endDate = Text(self.master, relief=GROOVE, height=1, width=10, borderwidth=2)
-        self.endDate.insert(END, "EndDate")
-        self.endDate.grid(row=6, column=1)
+    def displayPicture(self, picture):
+        im = Image.fromarray(picture)
+        imgtk = ImageTk.PhotoImage(image=im)
+        self.reportVisualLabel.configure(image=imgtk)
+        self.reportVisualLabel.image = imgtk
 
-        #
-        # self.startDate = StringVar()
-        # self.endDate = StringVar()
-        #
-        #
-        # Label(self.master, textvariable=self.startDate).grid(row=5, column=1)
-        # Label(self.master, textvariable=self.endDate).grid(row=6, column =1)
-
-        Button(self.master, text="GenerateReport", command=self.generatePicReport).grid(row=7, column=1)
+    def setupDummyList(self):
+        camData = [{"camName": "KatieCam", "timeStamp": "ts1", "picLocation": "location1"},{"camName": "SarahCam", "timeStamp": "ts2", "picLocation": "location2"}]
+        msg = RawQueryReply(True, camData)
+        envelope = Envelope(self.registrationServerAddress, msg)
+        self.handlePictureReportReply(envelope)
     #######
     def generatePicReport(self):
+        #self.loadImageFromFile()
+        reportType = self.picReportChoice.get()
+        if reportType == 0:
+            return
+        cameras = []
         for cam, isSelected in self.cameraSelection.items():
             if isSelected.get() == 1:
-                print cam
+                cameras.append(cam)
+        mostRecent = True if reportType == 1 else False
+        if mostRecent:
+            msg = RawQueryRequest(mostRecent, DateRange("", ""), cameras)
+            env = Envelope(self.mainServerAddress, msg)
+            self.comm.sendMessage(env)
+        else:
+            isValid1, startDate = self.startDate.getDate()
+            isValid2, endDate = self.endDate.getDate()
+            if not isValid1 or not isValid2:
+                print "Invalid date"
+                return
+            timePeriod = DateRange(startDate, endDate)
+            msg = RawQueryRequest(mostRecent, timePeriod, cameras)
+            env = Envelope(self.mainServerAddress, msg)
+            self.comm.sendMessage(env)
 
     ###### Messages Client Needs to Send #####
     def sendRegisterRequest(self):
@@ -130,6 +178,10 @@ class Client:
             self.handleRegisterReply(envelope)
         elif isinstance(envelope.message, ServerListReply):
             self.handleProcessListResponse(envelope)
+        elif isinstance(envelope.message, RawQueryReply):
+            self.handlePictureReportReply(envelope)
+        elif isinstance(envelope.message, GetPictureReply):
+            self.handleGetPictureReply(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
@@ -146,7 +198,6 @@ class Client:
             self.handleCameraListReply(envelope)
 
     def handleMainServerReply(self, envelope):
-        #self.handleCameraListReply(envelope)
         mainServers = envelope.message.servers
         if not mainServers:
             logging.info("Reponse contained no main servers")
@@ -161,14 +212,38 @@ class Client:
 
     def handleCameraListReply(self, envelope):
         cameraNames = envelope.message.servers
-        rowIndex = 3
         for camera in cameraNames:
             camVar = IntVar()
             self.cameraSelection[camera] = camVar
-            Checkbutton(self.master, text = camera, variable = camVar, \
-                 onvalue = 1, offvalue = 0).grid(row=rowIndex)
-            rowIndex += 1
-        return rowIndex
+            Checkbutton(self.cameraFrame, text = camera, variable = camVar, \
+                 onvalue = 1, offvalue = 0).pack()
+
+    def handlePictureReportReply(self, envelope):
+        picReportItems = envelope.message.data
+        self.picReportItems = {}
+        self.mylist.delete(0, END)
+        for picture in picReportItems:
+            camName = picture["camName"]
+            timeStamp = picture["timeStamp"]
+            picLocation = picture["picLocation"]
+            listItemVal = camName + ": " + timeStamp
+            self.picReportItems[listItemVal] = picLocation
+            self.mylist.insert(END, listItemVal)
+
+    def selectedReportItem(self, evt):
+        index = self.mylist.curselection()
+        if not index:
+            return
+        reportItem = self.mylist.get(index)
+        pictureLocation = self.picReportItems[reportItem]
+        envelope = Envelope(self.mainServerAddress, GetPictureRequest(pictureLocation))
+        #print envelope.message
+        self.comm.sendMessage(envelope)
+
+    def handleGetPictureReply(self, envelope):
+        print "Received picture"
+        picture = envelope.message.picture
+        self.displayPicture(picture)
 
 
 if __name__ == '__main__':
