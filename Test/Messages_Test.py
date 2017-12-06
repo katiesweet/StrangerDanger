@@ -724,14 +724,29 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(data.timeStamp, timeStamp)
         self.assertEqual(data.cameraName, 'Most Original Camera Name')
 
-    def testPictureManager(self):
-        #frame = np.arange(256).reshape(32,8)
-	frame = np.arange(92160).reshape(320,288)
-        splitFrames, numberOfParts = PictureManager.splitPicture(frame,40)
-        self.assertEqual(math.ceil(320/40), numberOfParts)
-        self.assertEqual(len(splitFrames), numberOfParts)
-        combinedFrame = PictureManager.combinePicture(splitFrames)
-        self.assertTrue(np.array_equal(frame, combinedFrame))
+    def testPictureManagerSmallPic(self):
+        frame = np.arange(320*288).reshape(320,288)
+    	splitFrames, numberOfParts = PictureManager.splitPicture(frame)
+        for index,picPiece in enumerate(splitFrames):
+            picturePart = PicturePart(picPiece, index, "ShemCam")
+            partMsg = SavePicturePartRequest(picturePart)
+            msgSize = len(partMsg.encode())
+            self.assertGreaterEqual(32000, msgSize)
+    	self.assertEqual(len(splitFrames), numberOfParts)
+    	combinedFrame = PictureManager.combinePicture(splitFrames)
+    	self.assertTrue(np.array_equal(frame, combinedFrame))
+
+    def testPictureManagerLargePic(self):
+    	frame = np.arange(640*480).reshape(640,480)
+    	splitFrames, numberOfParts = PictureManager.splitPicture(frame)
+        for index,picPiece in enumerate(splitFrames):
+            picturePart = PicturePart(picPiece, index, "ShemCam")
+            partMsg = SavePicturePartRequest(picturePart)
+            msgSize = len(partMsg.encode())
+            self.assertGreaterEqual(32000, msgSize)
+    	self.assertEqual(len(splitFrames), numberOfParts)
+    	combinedFrame = PictureManager.combinePicture(splitFrames)
+    	self.assertTrue(np.array_equal(frame, combinedFrame))
 
     def testPicturePart(self):
         part = np.arange(200).reshape(20,10)
