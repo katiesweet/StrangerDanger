@@ -26,7 +26,8 @@ class MainServer:
         self.databaseFile = "PhotoDatabase.json"
         #self.registrationServerAddress = ("34.209.66.116", 50000)
         #self.registrationServerAddress = ("144.39.254.27", 50000)
-        self.registrationServerAddress = ("192.168.0.23", 50000)
+        #self.registrationServerAddress = ("192.168.0.23", 50000)
+        self.registrationServerAddress = ("192.168.0.4", 52312)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -91,9 +92,9 @@ class MainServer:
         timeStamp = pictureInfo.timeStamp
         cameraName = pictureInfo.cameraName
 
-        rawFileName = cameraName + "_" + timeStamp
+        rawFileName = '{}_{}'.format(cameraName, timeStamp)
         rawFileName = rawFileName.replace(" ", "_")
-        rawFileName = rawFileName.replace(".", "/")
+        rawFileName = rawFileName.replace(".", ":")
         photoStorageLocation = 'PhotoDatabase/{}.jpg'.format(rawFileName)
         print 'Saving picture from {} at {}'.format(cameraName, timeStamp)
         scipy.misc.imsave(photoStorageLocation, picture)
@@ -102,13 +103,14 @@ class MainServer:
 
     def handleRawQueryRequest(self, envelope):
         with open(self.databaseFile, "r") as database:
-            camData = json.load(database)
+            camData = json.load(database)["pictures"]
         if envelope.message.mostRecent:
-            handleMostRecentDataRequest(envelope, camData)
+            self.handleMostRecentDataRequest(envelope, camData)
         else:
-            handleDataRangeRequest(envelope, camData)
+            self.handleDataRangeRequest(envelope, camData)
 
-    def handleMostRecentDataRequest(envelope, camData):
+    def handleMostRecentDataRequest(self, envelope, camData):
+        #print "Handling most recent request"
         validCams = envelope.message.cameras
         mostRecentTime = None
 
@@ -121,16 +123,15 @@ class MainServer:
                     mostRecentTime = time
                     mostRecentEntry = data
         responseData.append(mostRecentEntry)
-
         msg = RawQueryReply(True, responseData)
         msg.setConversationId(envelope.message.conversationId)
         self.comm.sendMessage(Envelope(envelope.endpoint, msg))
 
-    def handleDataRangeRequest(self, envelope, camName):
+    def handleDataRangeRequest(self, envelope, camData):
         validCams = envelope.message.cameras
         timePeriod = envelope.message.timePeriod
-        startTime = datetime.datetime.strptime(timePeriod.startDate, "%Y-%m-%d %H:%M:%S.%f")
-        endTime = datetime.datetime.strptime(timePeriod.endDate, "%Y-%m-%d %H:%M:%S.%f")
+        startTime = datetime.datetime.strptime(timePeriod.startDate, "%Y-%m-%d %H:%M:%S")
+        endTime = datetime.datetime.strptime(timePeriod.endDate, "%Y-%m-%d %H:%M:%S")
 
         responseData = []
         for data in camData:
@@ -143,7 +144,7 @@ class MainServer:
         msg.setConversationId(envelope.message.conversationId)
         self.comm.sendMessage(Envelope(envelope.endpoint, msg))
 
-    def handleGetPictureRequest(envelope):
+    def handleGetPictureRequest(self, envelope):
         picLocation = envelope.message.picLocation
 
         img = cv2.imread(picLocation)

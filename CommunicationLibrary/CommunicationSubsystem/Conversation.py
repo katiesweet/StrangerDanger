@@ -356,8 +356,7 @@ class ReceivedGetPictureConversation(GetPictureConversation):
         message = None
         if m_type == GetPictureReply:
             picture = prev_envelope.message.picture
-            sizeParts = 30000
-            parts, part_count = PictureManager.splitPicture(picture, sizeParts)
+            parts, part_count = PictureManager.splitPicture(picture)
             self.pictureParts = parts
             self.totalPicParts = part_count
             super(ReceivedGetPictureConversation,self).update_protocol(part_count, True, 4)
@@ -547,8 +546,7 @@ class InitiatedTransferMotionImageConversation(TransferMotionImageConversation):
         message = None
         if m_type == SaveMotionRequest:
             picture = prev_envelope.message.pictureInfo
-            sizeParts = 20
-            parts, part_count = PictureManager.splitPicture(picture.picture, sizeParts)
+            parts, part_count = PictureManager.splitPicture(picture.picture)
             self.pictureParts = parts
             self.totalPicParts = part_count
             super(InitiatedTransferMotionImageConversation,self).update_protocol(part_count, True, 3)

@@ -56,7 +56,7 @@ class ConversationManager:
             if not self.fromSocketQueue.empty():
                 envelope = self.fromSocketQueue.get()
                 logging.debug("Received envelope from socket with messageId " \
-                    +  repr(envelope.message.messageId))
+                    +  str(envelope.message.messageId))
 
                 conversationId = str(envelope.message.conversationId)
                 if conversationId in self.conversations:

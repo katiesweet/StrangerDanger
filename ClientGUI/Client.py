@@ -21,7 +21,7 @@ class Client:
         logging.info("Creating client process")
         self.master = master
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
-        self.registrationServerAddress = ("localhost" , 50000)
+        self.registrationServerAddress = ("localhost" , 52312)
         #self.registrationServerAddress = ("192.168.0.23" , 50000)
         self.mainServerAddress = (None, None)
         self.cameraSelection = {}
@@ -83,7 +83,7 @@ class Client:
         reportFrame.grid(row=4, column=0, columnspan=3, sticky="we")
 
         scrollbar = Scrollbar(reportFrame)
-        self.mylist = Listbox(reportFrame, yscrollcommand = scrollbar.set, bd=0)
+        self.mylist = Listbox(reportFrame, yscrollcommand = scrollbar.set, bd=0, width=30)
         self.mylist.bind('<<ListboxSelect>>', self.selectedReportItem)
         #self.setupDummyList()
         self.mylist.pack(side = LEFT, fill = BOTH, padx=(10, 0), pady=10)
@@ -124,15 +124,20 @@ class Client:
             if isSelected.get() == 1:
                 cameras.append(cam)
         mostRecent = True if reportType == 1 else False
-        isValid1, startDate = self.startDate.getDate()
-        isValid2, endDate = self.endDate.getDate()
-        if not isValid1 or not isValid2:
-            print "Invalid date"
-            return
-        timePeriod = DateRange(startDate, endDate)
-        # msg = RawQueryRequest(mostRecent, timePeriod, cameras)
-        # env = Envelope(self.mainServerAddress, msg)
-        # self.comm.sendMessage(env)
+        if mostRecent:
+            msg = RawQueryRequest(mostRecent, DateRange("", ""), cameras)
+            env = Envelope(self.mainServerAddress, msg)
+            self.comm.sendMessage(env)
+        else:
+            isValid1, startDate = self.startDate.getDate()
+            isValid2, endDate = self.endDate.getDate()
+            if not isValid1 or not isValid2:
+                print "Invalid date"
+                return
+            timePeriod = DateRange(startDate, endDate)
+            msg = RawQueryRequest(mostRecent, timePeriod, cameras)
+            env = Envelope(self.mainServerAddress, msg)
+            self.comm.sendMessage(env)
 
     ###### Messages Client Needs to Send #####
     def sendRegisterRequest(self):
@@ -218,7 +223,6 @@ class Client:
         self.picReportItems = {}
         self.mylist.delete(0, END)
         for picture in picReportItems:
-            print picture
             camName = picture["camName"]
             timeStamp = picture["timeStamp"]
             picLocation = picture["picLocation"]
@@ -233,10 +237,11 @@ class Client:
         reportItem = self.mylist.get(index)
         pictureLocation = self.picReportItems[reportItem]
         envelope = Envelope(self.mainServerAddress, GetPictureRequest(pictureLocation))
-        print envelope.message
-        #self.comm.sendMessage(envelope)
+        #print envelope.message
+        self.comm.sendMessage(envelope)
 
     def handleGetPictureReply(self, envelope):
+        print "Received picture"
         picture = envelope.message.picture
         self.displayPicture(picture)
 
