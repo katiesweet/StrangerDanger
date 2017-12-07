@@ -454,7 +454,7 @@ class ReceivedMainServerListConversation(MainServerListConversation):
 
 class CalculateStatsConversation(BaseConversation):
     initiation_message = CalcStatisticsRequest
-    initiated = None
+    initiated = False
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         self.protocol = self.createProtocol(envelopeIsOutgoing)
