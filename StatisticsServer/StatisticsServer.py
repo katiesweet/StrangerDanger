@@ -20,10 +20,12 @@ from CommunicationLibrary.Messages.SharedObjects import *
 class StatisticsServer:
     def __init__(self):
         logging.info('Creating Statistics Server')
-        self.comm = CommunicationSubsystem.CommunicationSubsystem()
+        myEndpoint = ('', 52500) # Good for both local and external connections
+        self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)
         self.shouldRun = True
 
-        self.registrationServerAddress = ("192.168.0.23", 50000)
+        #self.registrationServerAddress = ("192.168.0.23", 50000)
+        self.registrationServerAddress = ("localhost", 52000)
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
         t2 = Thread(target=self.__handleInput,args=())
@@ -37,7 +39,7 @@ class StatisticsServer:
         self.shouldRun = False
 
     def sendRegisterRequest(self):
-        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.MainServer))
+        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.StatisticsServer))
         self.comm.sendMessage(message)
         logging.debug("Sending message " + repr(message))
 
@@ -72,8 +74,8 @@ class StatisticsServer:
             self.comm.sendMessage(out_envelope)
 
     def filterData(self, data, timePeriod):
-        start = timePeriod.startDate
-        end = timePeriod.endDate
+        start = datetime.strptime(timePeriod.startDate, '%Y-%m-%d %H:%M:%S')
+        end = datetime.strptime(timePeriod.endDate, '%Y-%m-%d %H:%M:%S')
         filteredData = []
         for d in data:
             date = d['timeStamp']
@@ -87,9 +89,7 @@ class StatisticsServer:
         # returns dictionary of { dayZ_hourA: count of dayZ_hourA, dayY_hourB: counts of dayY_hourB, ...}
         recordedHours = {}
         for d in data:
-            hour = d.hour
-            day = d.day
-            key = str(day) + '_' + str(hour)
+            key = datetime.strftime(d,'%Y-%m-%d %H')
             if key in recordedHours:
                 recordedHours[key] += 1
             else:
@@ -101,9 +101,7 @@ class StatisticsServer:
         # returns dictionary of { monthZ_dayA: count of monthZ_dayA, monthY_dayB: counts of monthY_dayB, ...}
         recordedDays = {}
         for d in data:
-            day = d.day
-            month = d.month
-            key = str(month) + '_' + str(day)
+            key = datetime.strftime(d,'%Y-%m-%d')
             if key in recordedDays:
                 recordedDays[key] += 1
             else:

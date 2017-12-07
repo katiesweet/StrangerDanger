@@ -120,10 +120,8 @@ class Client:
     def displayPicture(self, picture):
         im = Image.fromarray(picture)
         imgtk = ImageTk.PhotoImage(image=im)
-        print "Start issue"
         self.reportVisualLabel.configure(image=imgtk)
         self.reportVisualLabel.image = imgtk
-        print "End issue"
 
     def setupDummyList(self):
         camData = [{"camName": "KatieCam", "timeStamp": "ts1", "picLocation": "location1"},{"camName": "SarahCam", "timeStamp": "ts2", "picLocation": "location2"}]
@@ -150,11 +148,12 @@ class Client:
         self.reportVisualLabel.image = None
 
     def generateStatsReport(self):
-        selectedReports = self.getSelectedStatsReports()
+        statsType = self.getSelectedStatsReports()
         cameras = self.getSelectedCameras()
         timePeriod = self.getDateRange()
         if timePeriod:
-            print selectedReports, cameras, timePeriod.startDate, timePeriod.endDate
+            msg = StatisticsRequest(timePeriod, statsType, cameras)
+            self.sendToMainServer(msg)
         self.reportVisualLabel.configure(text="", font=("Calibri", 16), image=None)
         self.reportVisualLabel.image = None
 
@@ -177,7 +176,10 @@ class Client:
         selectedReports = []
         for report, isSelected in self.statisticsOptions.items():
             if isSelected.get() == 1:
-                selectedReports.append(report)
+                if report == "Daily Activity":
+                    selectedReports.append("daily")
+                if report == "Hourly Activity":
+                    selectedReports.append("hourly")
         return selectedReports
     ###### Messages Client Needs to Send #####
     def sendRegisterRequest(self):
@@ -230,6 +232,8 @@ class Client:
             self.handlePictureReportReply(envelope)
         elif isinstance(envelope.message, GetPictureReply):
             self.handleGetPictureReply(envelope)
+        elif isinstance(envelope.message, StatisticsReply):
+            self.handleStatisticsReply(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
@@ -295,6 +299,9 @@ class Client:
         picture = envelope.message.picture
         self.displayPicture(picture)
 
+    def handleStatisticsReply(self, envelope):
+        print "Received statistics reply"
+        print envelope.message.report
 
 if __name__ == '__main__':
     root = Tk()

@@ -21,7 +21,7 @@ class Registry:
 
     def __init__(self):
         logging.info("Creating registry process")
-        myEndpoint = ('', 52312) # Good for both local and external connections
+        myEndpoint = ('', 52000) # Good for both local and external connections
 
         self.communicationsLock = threading.Lock()
         self.comm = CommunicationSubsystem.CommunicationSubsystem(myEndpoint)

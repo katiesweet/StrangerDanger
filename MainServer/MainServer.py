@@ -24,10 +24,9 @@ class MainServer:
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.shouldRun = True
         self.databaseFile = "PhotoDatabase.json"
-        #self.registrationServerAddress = ("34.209.66.116", 50000)
-        #self.registrationServerAddress = ("144.39.254.27", 50000)
         #self.registrationServerAddress = ("192.168.0.23", 50000)
         self.registrationServerAddress = ("localhost", 52000)
+        self.statisticsServerAddress = ("localhost", 52500)
         self.canStartSending = False
         self.sendRegisterRequest()
         t1 = Thread(target=self.__handleIncomingMessages,args=())
@@ -70,6 +69,8 @@ class MainServer:
             self.handleRawQueryRequest(envelope)
         elif isinstance(envelope.message, GetPictureRequest):
             self.handleGetPictureRequest(envelope)
+        elif isinstance(envelope.message, StatisticsRequest):
+            self.handleStatisticsRequest(envelope)
 
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
@@ -151,6 +152,29 @@ class MainServer:
         msg = GetPictureReply(True, img)
         msg.setConversationId(envelope.message.conversationId)
         self.comm.sendMessage(Envelope(envelope.endpoint, msg))
+
+    def getDataForCameras(self, validCams):
+        with open(self.databaseFile, "r") as database:
+            camData = json.load(database)["pictures"]
+
+        filteredCameras = []
+        for data in camData:
+            if data["camName"] in validCams:
+                filteredCameras.append(data)
+
+        return filteredCameras
+
+    def handleStatisticsRequest(self, envelope):
+        timePeriod = envelope.message.timePeriod
+        statsType = envelope.message.statsType
+        cameras = envelope.message.cameras
+        data = self.getDataForCameras(cameras)
+        clientEndpoint = envelope.endpoint
+
+        msg = CalcStatisticsRequest(timePeriod, statsType, data, clientEndpoint)
+        msg.setConversationId(envelope.message.conversationId)
+        self.comm.sendMessage(Envelope(self.statisticsServerAddress, msg))
+
 
 if __name__ == '__main__':
     MainServer()
