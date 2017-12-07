@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(filename="StatisticsServer.log", level=logging.DEBUG, \
     format='%(asctime)s - %(levelname)s - %(module)s - Thread: %(thread)d -\
     %(message)s')
-import datetime
+from datetime import datetime, timedelta
 
 from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 from CommunicationLibrary.Messages.RequestMessages import *
@@ -17,7 +17,7 @@ from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.SharedObjects import *
 
 
-class Statistics Server:
+class StatisticsServer:
     def __init__(self):
         logging.info('Creating Statistics Server')
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
@@ -32,7 +32,6 @@ class Statistics Server:
         t1.join()
         t2.join()
 
-
     def __handleInput(self):
         var = raw_input("Enter something to quit.\n")
         self.shouldRun = False
@@ -46,31 +45,71 @@ class Statistics Server:
         while self.shouldRun:
             hasMessage, message = self.comm.getMessage()
             if hasMessage:
+                logging.debug("Received new message")
                 self.__processNewMessage(message)
 
     def __processNewMessage(self, envelope):
         if isinstance(envelope.message, CalcStatisticsRequest):
+            logging.debug("Handling CalcStatisticsRequest message")
             self.handleCalcStatisticsRequest(envelope)
 
     def handleCalcStatisticsRequest(self, envelope):
         data = self.filterData(envelope.message.data, envelope.message.timePeriod)
         stat_type = envelope.message.statsType
-        statisticsReport = None
-        if stat_type == 'hourly':
-            statisticsReport = self.calculateHourly(data)
-        if stat_type == 'daily':
-            statisticsReport = self.calculateDaily(data)
+        statisticsReport = {}
+        if 'hourly' in stat_type:
+            logging.debug("Generating hourly report")
+            statisticsReport['hourly'] = self.calculateHourly(data)
+        if 'daily' in stat_type:
+            logging.debug("Generating daily report")
+            statisticsReport['daily'] = self.calculateDaily(data)
         if statisticsReport:
-            endpoint = envelope.message.clientEndPoint
-            message = StatisticsReply(report=statisticsReport)
-            envelope = Envelope(endpoint=endpoint, message=message)
+            logging.info("Sending Statistics Reply with report")
+            endpoint = envelope.message.clientEndpoint
+            message = StatisticsReply(success=True, report=statisticsReport)
+            message.setConversationId(envelope.message.conversationId)
+            out_envelope = Envelope(message=message, endpoint=endpoint)
+            self.comm.sendMessage(out_envelope)
 
+    def filterData(self, data, timePeriod):
+        start = timePeriod.startDate
+        end = timePeriod.endDate
+        filteredData = []
+        for d in data:
+            date = d['timeStamp']
+            date = datetime.strptime(str(date),'%Y-%m-%d %H:%M:%S.%f')
+            if date >= start and date <= end:
+                filteredData.append(date)
+        return filteredData
 
-    def calculateHourly(self):
-        pass
+    def calculateHourly(self, data):
+        # counts the sum of visits per hour
+        # returns dictionary of { dayZ_hourA: count of dayZ_hourA, dayY_hourB: counts of dayY_hourB, ...}
+        recordedHours = {}
+        for d in data:
+            hour = d.hour
+            day = d.day
+            key = str(day) + '_' + str(hour)
+            if key in recordedHours:
+                recordedHours[key] += 1
+            else:
+                recordedHours[key] = 1
+        return recordedHours
 
-    def calculateDaily(self):
-        pass
+    def calculateDaily(self, data):
+        # counts the sum of visits per day
+        # returns dictionary of { monthZ_dayA: count of monthZ_dayA, monthY_dayB: counts of monthY_dayB, ...}
+        recordedDays = {}
+        for d in data:
+            day = d.day
+            month = d.month
+            key = str(month) + '_' + str(day)
+            if key in recordedDays:
+                recordedDays[key] += 1
+            else:
+                recordedDays[key] = 1
+        return recordedDays
+
 
 if __name__ == '__main__':
     StatisticsServer()
