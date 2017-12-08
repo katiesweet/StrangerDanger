@@ -34,6 +34,16 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
 
+    def testMessageEncodingDecodingShouldFail(self):
+        msg = Message()
+        self.assertIsNot(msg, None)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testReplyMessageEncodingDecoding(self):
         msg = Reply(True)
         self.assertIsNot(msg, None)
@@ -49,6 +59,17 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, True)
 
+    def testReplyMessageEncodingDecodingShouldFail(self):
+        msg = Reply(True)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testRequestMessageEncodingDecoding(self):
         msg = Request()
         self.assertIsNot(msg, None)
@@ -61,6 +82,16 @@ class TestMessages(unittest.TestCase):
         self.assertTrue(isinstance(decodedMsg, Request))
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
+
+    def testRequestMessageEncodingDecodingShouldFail(self):
+        msg = Request()
+        self.assertIsNot(msg, None)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     ########## Reply Messages #############
     def testAckReplyEncodingDecoding(self):
@@ -79,6 +110,17 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, False)
 
+    def testAckReplyEncodingDecodingShouldFail(self):
+        msg = AckReply(False)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, False)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testAliveReplyEncodingDecoding(self):
         msg = AliveReply(False)
         self.assertIsNot(msg, None)
@@ -95,6 +137,17 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, False)
 
+    def testAliveReplyEncodingDecodingShouldFail(self):
+        msg = AliveReply(False)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, False)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testMotionDetectedReplyEncodingDecoding(self):
         msg = MotionDetectedReply(True)
         self.assertIsNot(msg, None)
@@ -110,6 +163,17 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, True)
+
+    def testMotionDetectedReplyEncodingDecodingShouldFail(self):
+        msg = MotionDetectedReply(True)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testRawQueryReplyEncodingDecoding(self):
         picture = np.array([[0, 255], [255, 0]], np.uint8)
@@ -144,6 +208,27 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data.timeStamp, timeStamp)
         self.assertEqual(decodedMsg.data.cameraName, 'Church of Sundberg')
 
+    def testRawQueryReplyEncodingDecodingShouldFail(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        data = PictureInfo(picture, timeStamp, 'Church of Sundberg')
+        msg = RawQueryReply(True, data)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+
+        self.assertIsNot(msg.data, None)
+        self.assertTrue(np.array_equal(msg.data.picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.data.timeStamp, timeStamp)
+        self.assertEqual(msg.data.cameraName, 'Church of Sundberg')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testRegisterReplyEncodingDecoding(self):
         nextProcessId = 6
         msg = RegisterReply(True, nextProcessId)
@@ -167,6 +252,20 @@ class TestMessages(unittest.TestCase):
 
         self.assertEqual(decodedMsg.processId, nextProcessId)
 
+    def testRegisterReplyEncodingDecodingShouldFail(self):
+        nextProcessId = 6
+        msg = RegisterReply(True, nextProcessId)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.processId, nextProcessId)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testSavePictureInfoReplyEncodingDecoding(self):
         msg = SavePictureInfoReply(True)
         self.assertIsNot(msg, None)
@@ -182,6 +281,17 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, True)
+
+    def testSavePictureInfoReplyEncodingDecodingShouldFail(self):
+        msg = SavePictureInfoReply(True)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testSavePicturePartReplyEncodingDecoding(self):
         msg = SavePicturePartReply(True, 20)
@@ -200,6 +310,18 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, True)
         self.assertEqual(decodedMsg.partNumber, 20)
+
+    def testSavePicturePartReplyEncodingDecodingShouldFail(self):
+        msg = SavePicturePartReply(True, 20)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        self.assertEqual(msg.partNumber, 20)
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testServerListReplyEncodingDecoding(self):
         servers = [
@@ -238,6 +360,29 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.servers[1].host, '127.0.0.5')
         self.assertEqual(decodedMsg.servers[1].port, '4060')
 
+    def testServerListReplyEncodingDecodingShouldFail(self):
+        servers = [
+            PublicEndPoint('127.0.0.3', '4000'),
+            PublicEndPoint('127.0.0.5', '4060'),
+        ]
+        msg = ServerListReply(True, ProcessType.MainServer, servers)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+
+        self.assertIsNot(msg.servers, None)
+        self.assertEqual(msg.servers[0].host, '127.0.0.3')
+        self.assertEqual(msg.servers[0].port, '4000')
+        self.assertEqual(msg.servers[1].host, '127.0.0.5')
+        self.assertEqual(msg.servers[1].port, '4060')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testStatisticsReplyEncodingDecoding(self):
         report = ActivityReport(5, 2)
         msg = StatisticsReply(True, report)
@@ -267,6 +412,24 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.report.weeklyMotionEvents, 5)
         self.assertEqual(decodedMsg.report.dailyMotionEvents, 2)
 
+    def testStatisticsReplyEncodingDecodingShouldFail(self):
+        report = ActivityReport(5, 2)
+        msg = StatisticsReply(True, report)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+
+        self.assertIsNot(msg.report, None)
+        self.assertEqual(msg.report.weeklyMotionEvents, 5)
+        self.assertEqual(msg.report.dailyMotionEvents, 2)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testSyncDataReplyEncodingDecoding(self):
         msg = SyncDataReply(True)
         self.assertIsNot(msg, None)
@@ -283,6 +446,18 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.success, True)
+
+    def testSyncDataReplyEncodingDecodingShouldFail(self):
+        msg = SyncDataReply(True)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testGetPictureReplyEncodingDecoding(self):
         picture = np.array([[0, 255], [255, 0]], np.uint8)
@@ -304,6 +479,20 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.success, True)
         self.assertTrue(np.array_equal(decodedMsg.picture, picture))
 
+    def testGetPictureReplyEncodingDecodingShouldFail(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        msg = GetPictureReply(True, picture)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.success, True)
+        self.assertTrue(np.array_equal(msg.picture, picture))
+
+        msgId = msg.messageId
+        convId= msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     ######### Request Messages #########
     def testAliveRequestEncodingDecoding(self):
         msg = AliveRequest()
@@ -319,6 +508,17 @@ class TestMessages(unittest.TestCase):
         self.assertTrue(isinstance(decodedMsg, AliveRequest))
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
+
+    def testAliveRequestEncodingDecodingShouldFail(self):
+        msg = AliveRequest()
+        self.assertIsNot(msg, None)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testCalcStatisticsRequestEncodingDecoding(self):
         timePeriod = DateRange(date(2017,10,31),date(2017,9,1))
@@ -368,6 +568,34 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data[0].timeStamp, timeStamp)
         self.assertEqual(decodedMsg.data[0].cameraName, 'Bacon')
 
+    def testCalcStatisticsRequestEncodingDecodingShouldFail(self):
+        timePeriod = DateRange(date(2017,10,31),date(2017,9,1))
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        data = [
+            PictureInfo(picture, timeStamp, 'Bacon')
+        ]
+        clientEndpoint = ('192.168.0.4',3200)
+
+        msg = CalcStatisticsRequest(timePeriod, 'Daily', data, clientEndpoint)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.timePeriod, timePeriod)
+        self.assertEqual(msg.statsType, 'Daily')
+        self.assertEqual(msg.clientEndpoint, clientEndpoint)
+
+        self.assertIsNot(msg.data, None)
+        self.assertTrue(np.array_equal(msg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.data[0].timeStamp, timeStamp)
+        self.assertEqual(msg.data[0].cameraName, 'Bacon')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testRawQueryRequestEncodingDecoding(self):
         isMostRecent = False
         timePeriod = DateRange(date(2017, 5, 25), date(2017, 6, 30))
@@ -410,6 +638,30 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.cameras[1], '126')
         self.assertEqual(decodedMsg.cameras[2], '6')
 
+    def testRawQueryRequestEncodingDecodingShouldFail(self):
+        isMostRecent = False
+        timePeriod = DateRange(date(2017, 5, 25), date(2017, 6, 30))
+        cameras = ['1', '126', '6']
+        msg = RawQueryRequest(False, timePeriod, cameras)
+        self.assertIsNot(msg, None)
+
+        self.assertEqual(msg.mostRecent, isMostRecent)
+        self.assertEqual(msg.timePeriod.startDate, timePeriod.startDate)
+        self.assertEqual(msg.timePeriod.endDate, timePeriod.endDate)
+
+        self.assertIsNot(msg.cameras, None)
+        self.assertEqual(msg.cameras[0], '1')
+        self.assertEqual(msg.cameras[1], '126')
+        self.assertEqual(msg.cameras[2], '6')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testRegisterRequestEncodingDecoding(self):
         msg = RegisterRequest(ProcessType.MainServer)
         self.assertIsNot(msg, None)
@@ -429,6 +681,19 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.processType, ProcessType.MainServer)
+
+    def testRegisterRequestEncodingDecodingShouldFail(self):
+        msg = RegisterRequest(ProcessType.MainServer)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.processType, ProcessType.MainServer)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testSaveCombinedPictureRequest(self):
         picture = np.array([[0, 255], [255, 0]], np.uint8)
@@ -461,6 +726,26 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.pictureInfo.timeStamp, timeStamp)
         self.assertEqual(decodedMsg.pictureInfo.cameraName, 'ShemCam')
 
+    def testSaveCombinedPictureRequestShouldFail(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        pictureInfo = PictureInfo(picture, timeStamp, 'ShemCam')
+        msg = SaveCombinedPictureRequest(pictureInfo)
+        self.assertIsNot(msg, None)
+
+        self.assertIsNot(msg.pictureInfo, None)
+        self.assertTrue(np.array_equal(msg.pictureInfo.picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.pictureInfo.timeStamp, timeStamp)
+        self.assertEqual(msg.pictureInfo.cameraName, 'ShemCam')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testSaveMotionRequestEncodingDecoding(self):
         picture = np.array([[0, 255], [255, 0]], np.uint8)
         timeStamp = datetime.now()
@@ -492,6 +777,26 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.pictureInfo.timeStamp, timeStamp)
         self.assertEqual(decodedMsg.pictureInfo.cameraName, 'Ya boi Shem')
 
+    def testSaveMotionRequestEncodingDecodingShouldFail(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        pictureInfo = PictureInfo(picture, timeStamp, 'Ya boi Shem')
+        msg = SaveMotionRequest(pictureInfo)
+        self.assertIsNot(msg, None)
+
+        self.assertIsNot(msg.pictureInfo, None)
+        self.assertTrue(np.array_equal(msg.pictureInfo.picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.pictureInfo.timeStamp, timeStamp)
+        self.assertEqual(msg.pictureInfo.cameraName, 'Ya boi Shem')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testSavePictureInfoRequestEncodingDecoding(self):
         timeStamp = datetime.now()
         msg = SavePictureInfoRequest(30, timeStamp, 'KatieCam')
@@ -518,6 +823,23 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.numberOfParts, 30)
         self.assertEqual(decodedMsg.timeStamp, timeStamp)
         self.assertEqual(decodedMsg.cameraName, 'KatieCam')
+
+    def testSavePictureInfoRequestEncodingDecodingShouldFail(self):
+        timeStamp = datetime.now()
+        msg = SavePictureInfoRequest(30, timeStamp, 'KatieCam')
+        self.assertIsNot(msg, None)
+
+        self.assertEqual(msg.numberOfParts, 30)
+        self.assertEqual(msg.timeStamp, timeStamp)
+        self.assertEqual(msg.cameraName, 'KatieCam')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testSavePicturePartRequestEncodingDecoding(self):
         part = np.array([[0, 255], [255, 0]], np.uint8)
@@ -549,6 +871,25 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.picturePart.partNumber, 7)
         self.assertEqual(decodedMsg.picturePart.cameraName, 'SarahCam')
 
+    def testSavePicturePartRequestEncodingDecodingShouldFail(self):
+        part = np.array([[0, 255], [255, 0]], np.uint8)
+        picturePart = PicturePart(part, 7, 'SarahCam')
+        msg = SavePicturePartRequest(picturePart)
+        self.assertIsNot(msg, None)
+
+        self.assertIsNot(msg.picturePart, None)
+        self.assertTrue(np.array_equal(msg.picturePart.picturePart, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.picturePart.partNumber, 7)
+        self.assertEqual(msg.picturePart.cameraName, 'SarahCam')
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testServerListRequestEncodingDecoding(self):
         msg = ServerListRequest(ProcessType.CameraProcess)
         self.assertIsNot(msg, None)
@@ -564,6 +905,17 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.processType, ProcessType.CameraProcess)
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
+
+    def testServerListRequestEncodingDecodingShouldFail(self):
+        msg = ServerListRequest(ProcessType.CameraProcess)
+        self.assertIsNot(msg, None)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testStatisticsRequestEncodingDecoding(self):
         timePeriod = DateRange(date(2017,1,31),date(2017,9,1))
@@ -606,6 +958,28 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.cameras[1], '65')
         self.assertEqual(decodedMsg.cameras[2], '69')
 
+    def testStatisticsRequestEncodingDecodingShouldFail(self):
+        timePeriod = DateRange(date(2017,1,31),date(2017,9,1))
+        cameras = ['25', '65', '69']
+        msg = StatisticsRequest(timePeriod, 'Weekly', cameras)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.timePeriod, timePeriod)
+        self.assertEqual(msg.statsType, 'Weekly')
+
+        self.assertIsNot(msg.cameras, None)
+        self.assertEqual(msg.cameras[0], '25')
+        self.assertEqual(msg.cameras[1], '65')
+        self.assertEqual(msg.cameras[2], '69')
+
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testSubscribeRequestEncodingDecoding(self):
         msg = SubscribeRequest(42)
         self.assertIsNot(msg, None)
@@ -622,6 +996,18 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.clusterId, 42)
+
+    def testSubscribeRequestEncodingDecodingShouldFail(self):
+        msg = SubscribeRequest(42)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.clusterId, 42)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     def testSyncDataRequestEncodingDecoding(self):
         picture = np.array([[0, 255], [255, 0]], np.uint8)
@@ -657,6 +1043,29 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data[0].timeStamp, timeStamp)
         self.assertEqual(decodedMsg.data[0].cameraName, 'Cat Cam')
 
+    def testSyncDataRequestEncodingDecodingShouldFail(self):
+        picture = np.array([[0, 255], [255, 0]], np.uint8)
+        timeStamp = datetime.now()
+        data =  [
+            PictureInfo(picture, timeStamp, 'Cat Cam')
+        ]
+        msg = SyncDataRequest(data)
+        self.assertIsNot(msg, None)
+
+        self.assertIsNot(msg.data, None)
+        self.assertTrue(np.array_equal(msg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
+        self.assertEqual(msg.data[0].timeStamp, timeStamp)
+        self.assertEqual(msg.data[0].cameraName, 'Cat Cam')
+
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
+
     def testGetPictureRequestEncodingDecoding(self):
         picLocation = 'someFolder/somePic.jpg'
 
@@ -675,6 +1084,20 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
         self.assertEqual(decodedMsg.picLocation, picLocation)
+
+    def testGetPictureRequestEncodingDecodingShouldFail(self):
+        picLocation = 'someFolder/somePic.jpg'
+
+        msg = GetPictureRequest(picLocation)
+        self.assertIsNot(msg, None)
+        self.assertEqual(msg.picLocation, picLocation)
+
+        msgId = msg.messageId
+        convId = msg.conversationId
+        encodedMsg = msg.encode()
+        alteredMsg = encodedMsg[:20] + 'asdfasdfasdfasdf' + encodedMsg[20:]
+        self.assertFalse(alteredMsg is encodedMsg)
+        self.assertRaises(Exception, Message.decode, alteredMsg)
 
     ########## SharedObjects ############
     def testActivityReport(self):
