@@ -4,6 +4,7 @@ import logging
 #import sys
 from CommunicationLibrary.Messages.AbstractMessages import * # Message
 from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
+from Crypto.Cipher import AES
 
 class UdpConnection:
     def __init__(self, outgoingMessageQueue, incomingMessageQueue, myEndpoint):
@@ -20,15 +21,26 @@ class UdpConnection:
         self.shouldListen = False
         # Join thread?
 
+    def encryptMessage(self, message):
+        # generate key for encryption based on the passphrase and Initialization Vector
+        key = AES.new('This is a key123', AES.MODE_CFB, 'This is an IV456')
+        return key.encrypt(message)
+
+    def decryptMessage(self, message):
+        # generate key for decryption based on the passphrase and Initialization Vector
+        key = AES.new('This is a key123', AES.MODE_CFB, 'This is an IV456')
+        return key.decrypt(message)
+
     def __sendMessage(self, udpSocket, envelope):
         encodedMessage = envelope.message.encode()
+        encryptedMessage = self.encryptMessage(encodedMessage)
         try:
             #print "Sending message", envelope.message, " to ", \
             #    envelope.endpoint
             logging.debug("Sending message " + repr(envelope.message) \
                 + " to " + repr(envelope.endpoint))
             #print 'length of message is {}'.format(len(encodedMessage))
-            udpSocket.sendto(encodedMessage, envelope.endpoint)
+            udpSocket.sendto(encryptedMessage, envelope.endpoint)
         except socket.error, msg:
             logging.error("Could not send message to server.")
             #print socket.error, msg
@@ -37,7 +49,8 @@ class UdpConnection:
         try:
             data, addr = udpSocket.recvfrom(32768)
             if data:
-                message = Message.decode(data)
+                decryptedData = self.decryptMessage(data)
+                message = Message.decode(decryptedData)
                 #print "Received message: ", message, " from ", addr
                 logging.debug("Received message " + repr(message) + \
                     " from " + repr(addr))
