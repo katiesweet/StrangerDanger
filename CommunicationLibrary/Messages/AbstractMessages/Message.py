@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 import cPickle as pickle
 import copy
 from CommunicationLibrary.Messages.SharedObjects.MessageId import MessageId
+from Crypto.Cipher import AES
 
 class Message:
     __metaclass__ = ABCMeta
@@ -20,8 +21,16 @@ class Message:
         self.conversationId = conversationId
 
     def encode(self):
-        return pickle.dumps(self)
+        encodedMsg = pickle.dumps(self)
+        # generate key for encryption based on the passphrase and Initialization Vector
+        key = AES.new('This is a key123', AES.MODE_CFB, 'This is an IV456')
+        encryptedMsg = key.encrypt(encodedMsg)
+        return encryptedMsg
 
     @staticmethod
     def decode(encodedMsg):
-        return pickle.loads(encodedMsg)
+        # generate key for decryption based on the passphrase and Initialization Vector
+        key = AES.new('This is a key123', AES.MODE_CFB, 'This is an IV456')
+        decryptedMsg = key.decrypt(encodedMsg)
+        decodedMsg = pickle.loads(decryptedMsg)
+        return decodedMsg
