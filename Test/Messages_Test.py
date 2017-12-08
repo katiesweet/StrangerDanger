@@ -327,17 +327,18 @@ class TestMessages(unittest.TestCase):
         data = [
             PictureInfo(picture, timeStamp, 'Bacon')
         ]
+        clientEndpoint = ('192.168.0.4',3200)
 
-        msg = CalcStatisticsRequest(timePeriod, 'Daily', data)
+        msg = CalcStatisticsRequest(timePeriod, 'Daily', data, clientEndpoint)
         self.assertIsNot(msg, None)
         self.assertEqual(msg.timePeriod, timePeriod)
         self.assertEqual(msg.statsType, 'Daily')
+        self.assertEqual(msg.clientEndpoint, clientEndpoint)
 
         self.assertIsNot(msg.data, None)
         self.assertTrue(np.array_equal(msg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
         self.assertEqual(msg.data[0].timeStamp, timeStamp)
         self.assertEqual(msg.data[0].cameraName, 'Bacon')
-
 
         msgId = msg.messageId
         convId = msg.conversationId
@@ -360,6 +361,7 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.timePeriod.endDate.month, timePeriod.endDate.month)
         self.assertEqual(decodedMsg.timePeriod.endDate.day, timePeriod.endDate.day)
         self.assertEqual(decodedMsg.statsType, 'Daily')
+        self.assertEqual(decodedMsg.clientEndpoint, clientEndpoint)
 
         self.assertIsNot(decodedMsg.data, None)
         self.assertTrue(np.array_equal(decodedMsg.data[0].picture, np.array([[0, 255], [255, 0]], np.uint8)))
@@ -656,13 +658,11 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(decodedMsg.data[0].cameraName, 'Cat Cam')
 
     def testGetPictureRequestEncodingDecoding(self):
-        camName = "ShemCam"
-        timeStamp = date(2017,10,31)
+        picLocation = 'someFolder/somePic.jpg'
 
-        msg = GetPictureRequest(camName, timeStamp)
+        msg = GetPictureRequest(picLocation)
         self.assertIsNot(msg, None)
-        self.assertEqual(msg.camName, camName)
-        self.assertEqual(msg.timeStamp, timeStamp)
+        self.assertEqual(msg.picLocation, picLocation)
 
         msgId = msg.messageId
         convId = msg.conversationId
@@ -674,8 +674,7 @@ class TestMessages(unittest.TestCase):
         self.assertTrue(isinstance(decodedMsg, GetPictureRequest))
         self.assertEqual(decodedMsg.conversationId, convId)
         self.assertEqual(decodedMsg.messageId, msgId)
-        self.assertEqual(decodedMsg.camName, camName)
-        self.assertEqual(decodedMsg.timeStamp, timeStamp)
+        self.assertEqual(decodedMsg.picLocation, picLocation)
 
     ########## SharedObjects ############
     def testActivityReport(self):
@@ -725,19 +724,20 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(data.cameraName, 'Most Original Camera Name')
 
     def testPictureManagerSmallPic(self):
-        frame = np.arange(320*288).reshape(320,288)
+        frame = np.arange(320*288).reshape(320,288).astype('uint8')
     	splitFrames, numberOfParts = PictureManager.splitPicture(frame)
         for index,picPiece in enumerate(splitFrames):
             picturePart = PicturePart(picPiece, index, "ShemCam")
             partMsg = SavePicturePartRequest(picturePart)
-            msgSize = len(partMsg.encode())
+            encodedMsg = partMsg.encode()
+            msgSize = len(encodedMsg)
             self.assertGreaterEqual(32000, msgSize)
     	self.assertEqual(len(splitFrames), numberOfParts)
     	combinedFrame = PictureManager.combinePicture(splitFrames)
     	self.assertTrue(np.array_equal(frame, combinedFrame))
 
     def testPictureManagerLargePic(self):
-    	frame = np.arange(640*480).reshape(640,480)
+    	frame = np.arange(640*480).reshape(640,480).astype('uint8')
     	splitFrames, numberOfParts = PictureManager.splitPicture(frame)
         for index,picPiece in enumerate(splitFrames):
             picturePart = PicturePart(picPiece, index, "ShemCam")
