@@ -32,9 +32,9 @@ class UdpConnection:
         return key.decrypt(message)
 
     def __sendMessage(self, udpSocket, envelope):
-        encodedMessage = envelope.message.encode()
-        encryptedMessage = self.encryptMessage(encodedMessage)
         try:
+            encodedMessage = envelope.message.encode()
+            encryptedMessage = self.encryptMessage(encodedMessage)
             #print "Sending message", envelope.message, " to ", \
             #    envelope.endpoint
             logging.debug("Sending message " + repr(envelope.message) \
@@ -42,7 +42,7 @@ class UdpConnection:
             #print 'length of message is {}'.format(len(encodedMessage))
             udpSocket.sendto(encryptedMessage, envelope.endpoint)
         except socket.error, msg:
-            logging.error("Could not send message to server.")
+            logging.error("Could not send message to server: {}".format(msg))
             #print socket.error, msg
 
     def __receiveMessage(self, udpSocket):
