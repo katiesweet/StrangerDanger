@@ -102,7 +102,7 @@ class BaseConversation(object):
 
     def checkReceived(self):
         while self.waiting:
-            time.sleep(1)
+            time.sleep(5)
             if self.waiting:
                 self.missed_waits += 1
                 logging.debug("missed message")
@@ -454,7 +454,7 @@ class ReceivedMainServerListConversation(MainServerListConversation):
 
 class CalculateStatsConversation(BaseConversation):
     initiation_message = CalcStatisticsRequest
-    initiated = None
+    initiated = False
 
     def __init__(self, envelope, envelopeIsOutgoing, toSocketQueue, fromConversationQueue, destructFunc):
         self.protocol = self.createProtocol(envelopeIsOutgoing)
