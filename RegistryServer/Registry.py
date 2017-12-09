@@ -73,7 +73,7 @@ class Registry:
         elif processType == ProcessType.CameraProcess:
             self.__addCameraName(envelope.message.name)
 
-        responseMessage = RegisterReply(True, self.__getNextProcessId())
+        responseMessage = RegisterReply(True, self.__getNextProcessId(), envelope.message.key)
         responseMessage.setConversationId(envelope.message.conversationId)
 
         outEnv = Envelope(envelope.endpoint, responseMessage)

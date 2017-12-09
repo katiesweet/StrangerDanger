@@ -47,7 +47,7 @@ class Camera():
             self.shouldRun = True
             self.comm = CommunicationSubsystem.CommunicationSubsystem()
             #self.registrationServerAddress = ("34.209.66.116", 50000)
-            self.registrationServerAddress = ("localhost", 50000)
+            self.registrationServerAddress = ("localhost", 52000)
             self.mainServerList = []
             self.canStartSending = False
 
@@ -62,7 +62,7 @@ class Camera():
             pass
 
     def sendRegisterRequest(self):
-        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.CameraProcess, self.name))
+        message = Envelope(self.registrationServerAddress, RegisterRequest(ProcessType.CameraProcess, name=self.name))
         self.comm.sendMessage(message)
         logging.debug("Sending Register Request message " + repr(message))
 
@@ -122,7 +122,7 @@ class Camera():
             self.text = "Occupied"
         return frame
 
-    
+
     def locateMotion(self, frame, gray, avg):
         frameDelta = self.calcFrameDelta(self.gray, avg)
         contours = self.findContoursAroundMotion(frameDelta)
@@ -165,7 +165,7 @@ class Camera():
 
         # otherwise, the room is not occupied
         else:
-            self.motionCounter = 0 
+            self.motionCounter = 0
 
     def updateFrame(self, frame, timestamp):
         frame = self.updateStatusAndTime(frame, timestamp)
@@ -208,12 +208,12 @@ class Camera():
                 # display the security feed
                 cv2.imshow("Security Feed", frame)
                 key = cv2.waitKey(1) & 0xFF
- 
+
                 # if the `q` key is pressed, break from the lop
                 if key == ord("q"):
                     self.shouldRun = False
                     break
- 
+
             # clear the stream in preparation for the next frame
             rawCapture.truncate(0)
 
@@ -250,7 +250,7 @@ class Camera():
         logging.info('Received Main Server List')
         for server in self.mainServerList:
             logging.info('Main Server Endpoint: {}'.format(server))
-            
+
 
 if __name__ == '__main__':
     Camera()
