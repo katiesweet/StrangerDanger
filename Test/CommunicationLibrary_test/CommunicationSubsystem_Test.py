@@ -165,7 +165,7 @@ class CommunicationSubsystem_Test(unittest.TestCase):
         env = Envelope(message=r_message, endpoint='endpoint')
         is_outgoing = True
         convo = cf.create_conversation(env, is_outgoing, Queue.Queue(), Queue.Queue(), None)
-        reply_m = RegisterReply("test", "test")
+        reply_m = RegisterReply("test", "test", "test")
         env2 = Envelope(message=reply_m, endpoint='endpoint')
         pro = [pro for pro in convo.protocol if pro['type'] == type(reply_m)]
         self.assertFalse(pro[0]['status'])
