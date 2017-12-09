@@ -1,10 +1,12 @@
 import socket
 import thread
 import logging
-#import sys
 from CommunicationLibrary.Messages.AbstractMessages import * # Message
+from CommunicationLibrary.Messages.ReplyMessages import *
+from CommunicationLibrary.Messages.RequestMessages import *
 from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
-from Crypto.Cipher import AES
+from CommunicationLibrary.Messages.SharedObjects.KeyManager import KeyManager
+from CommunicationLibrary.Messages.SharedObjects.KeyGenerator import KeyGenerator
 
 class UdpConnection:
     def __init__(self, outgoingMessageQueue, incomingMessageQueue, myEndpoint):
@@ -21,26 +23,55 @@ class UdpConnection:
         self.shouldListen = False
         # Join thread?
 
-    def encryptMessage(self, message):
-        # generate key for encryption based on the passphrase and Initialization Vector
-        key = AES.new('This is a key123', AES.MODE_CFB, 'This is an IV456')
-        return key.encrypt(message)
+    def encryptRegisterRequest(self, message):
+        logging.debug('Encrypting Register Request')
+        key = KeyManager.loadKey('RegistryPublicKey.pem')
+        return KeyManager.encryptMessage(key, message)
 
-    def decryptMessage(self, message):
-        # generate key for decryption based on the passphrase and Initialization Vector
-        key = AES.new('This is a key123', AES.MODE_CFB, 'This is an IV456')
-        return key.decrypt(message)
+    def decryptRegisterRequest(self, message):
+        logging.debug('Decrypting Register Request')
+        key = KeyManager.loadKey('RegistryPrivateKey.pem')
+        return KeyManager.decryptMessage(key, message)
+
+    def encryptRegisterReply(self, message, key):
+        logging.debug('Encrypting Register Reply')
+        return KeyManager.encryptMessage(key, message)
+
+    def decryptRegisterReply(self, message):
+        logging.debug('Decrypting Register Reply')
+        key = KeyManager.loadKey('ProcessPrivateKey.pem')
+        return KeyManager.decryptMessage(key, message)
+
+    def generateAndSaveKeys(self):
+        logging.debug('Generating Public/Private keys')
+        key = KeyGenerator.generateKeyPair()
+        public_key = key.publickey()
+        KeyManager.saveKey('ProcessPrivateKey.pem', key)
+        KeyManager.saveKey('ProcessPublicKey.pem', public_key)
+        return public_key
 
     def __sendMessage(self, udpSocket, envelope):
         try:
-            encodedMessage = envelope.message.encode()
-            encryptedMessage = self.encryptMessage(encodedMessage)
+            if isinstance(envelope.message, RegisterRequest):
+                public_key = self.generateAndSaveKeys()
+                envelope.message.key = public_key
+                message = envelope.message.encode()
+                logging.debug('Encrypting Register Request message')
+                message = self.encryptRegisterRequest(message)
+                message = 'encryptedRequest{}'.format(message)
+            elif isinstance(envelope.message, RegisterReply):
+                message = envelope.message.encode()
+                logging.debug('Encrypting Register Reply message')
+                message = self.encryptRegisterReply(message, envelope.message.key)
+                message = 'encryptedReply{}'.format(message)
+            else:
+                message = envelope.message.encode()
             #print "Sending message", envelope.message, " to ", \
             #    envelope.endpoint
             logging.debug("Sending message " + repr(envelope.message) \
                 + " to " + repr(envelope.endpoint))
             #print 'length of message is {}'.format(len(encodedMessage))
-            udpSocket.sendto(encryptedMessage, envelope.endpoint)
+            udpSocket.sendto(message, envelope.endpoint)
         except socket.error, msg:
             logging.error("Could not send message to server: {}".format(msg))
             #print socket.error, msg
@@ -49,8 +80,13 @@ class UdpConnection:
         try:
             data, addr = udpSocket.recvfrom(32768)
             if data:
-                decryptedData = self.decryptMessage(data)
-                message = Message.decode(decryptedData)
+                if (data[0:16] == 'encryptedRequest'):
+                    logging.debug('Decrypting Register Request message')
+                    data = self.decryptRegisterRequest(data[16:])
+                if (data[0:14] == 'encryptedReply'):
+                    logging.debug('Decrypting Register Request message')
+                    data = self.decryptRegisterReply(data[14:])
+                message = Message.decode(data)
                 #print "Received message: ", message, " from ", addr
                 logging.debug("Received message " + repr(message) + \
                     " from " + repr(addr))

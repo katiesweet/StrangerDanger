@@ -14,8 +14,9 @@ logging.basicConfig(filename="Registry.log", level=logging.DEBUG, \
 from CommunicationLibrary.CommunicationSubsystem import CommunicationSubsystem
 from CommunicationLibrary.Messages.ReplyMessages import *
 from CommunicationLibrary.Messages.RequestMessages import *
-
 from CommunicationLibrary.Messages.SharedObjects import *
+from CommunicationLibrary.Messages.SharedObjects.KeyManager import KeyManager
+from CommunicationLibrary.Messages.SharedObjects.KeyGenerator import KeyGenerator
 
 class Registry:
 
@@ -72,7 +73,7 @@ class Registry:
         elif processType == ProcessType.CameraProcess:
             self.__addCameraName(envelope.message.name)
 
-        responseMessage = RegisterReply(True, self.__getNextProcessId())
+        responseMessage = RegisterReply(True, self.__getNextProcessId(), envelope.message.key)
         responseMessage.setConversationId(envelope.message.conversationId)
 
         outEnv = Envelope(envelope.endpoint, responseMessage)
@@ -200,6 +201,15 @@ class Registry:
                 servers[(server[0], server[1])] = True
 
             return servers
+
+    # Only call this when the old key pair is lost
+    # Each Process will have to update their RegistryPublicKey after this is called
+    def __generateNewKeyPair(self):
+        print 'generating new key pair'
+        key = KeyGenerator.generateKeyPair()
+        public_key = key.publickey()
+        KeyManager.saveKey('RegistryPrivateKey.pem',key)
+        KeyManager.saveKey('RegistryPublicKey.pem',public_key)
 
 
 if __name__ == '__main__':
