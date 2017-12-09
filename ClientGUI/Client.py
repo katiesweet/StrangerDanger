@@ -5,6 +5,10 @@ from ttk import Separator, Scrollbar, Sizegrip
 from PIL import Image, ImageTk
 import cv2
 import DateEntry
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+import numpy as np
 
 import logging
 logging.basicConfig(filename="Client.log", level=logging.DEBUG, \
@@ -20,6 +24,7 @@ class Client:
     def __init__(self, master):
         logging.info("Creating client process")
         self.master = master
+        master.protocol("WM_DELETE_WINDOW", self.stopRunning)
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.registrationServerAddress = ("localhost" , 52000)
         #self.registrationServerAddress = ("192.168.0.23" , 50000)
@@ -27,14 +32,18 @@ class Client:
         self.cameraSelection = {}
         self.statisticsOptions = {}
         self.picReportItems = {}
+        self.statsReportItems = {}
         self.canStartSending = False
+        self.isPicReport = True
         self.setupGui()
 
         self.sendRegisterRequest()
         self.sendServerListRequest()
         self.checkForMessagesPeriodically()
 
-        #self.sendServerListRequest()
+    def stopRunning(self):
+        plt.close()
+        #self.master.destroy()
 
     def setupGui(self):
         self.master.title("Stranger Danger")
@@ -107,14 +116,16 @@ class Client:
 
         picFrame = Frame(reportFrame, width=320, height=288)
         picFrame.pack_propagate(0)
-        self.reportVisualLabel = Label(picFrame)
+        self.reportVisualLabel = Label(picFrame, image=None)
+        self.reportVisualLabel.image = None
         self.reportVisualLabel.pack()
         #self.loadImageFromFile()
-        picFrame.pack(side=LEFT, fill=BOTH, padx=10, pady=10)
+        picFrame.pack(side=TOP, fill=BOTH, padx=10, pady=10)
 
     def loadImageFromFile(self):
-        path = "/Users/katiesweet/Desktop/KatieCam_2017-11-30 21:19:05.192955.jpg"
+        path = "./report.png"
         image = cv2.imread(path)
+        image = cv2.resize(image, (320, 288))
         self.displayPicture(image)
 
     def displayPicture(self, picture):
@@ -137,25 +148,26 @@ class Client:
         cameras = self.getSelectedCameras()
         mostRecent = True if reportType == 1 else False
         if mostRecent:
+            self.isPicReport = True
             msg = RawQueryRequest(mostRecent, DateRange("", ""), cameras)
             self.sendToMainServer(msg)
         else:
             timePeriod = self.getDateRange()
             if timePeriod:
+                self.isPicReport = True
                 msg = RawQueryRequest(mostRecent, timePeriod, cameras)
                 self.sendToMainServer(msg)
-        self.reportVisualLabel.configure(text="", font=("Calibri", 16))
-        self.reportVisualLabel.image = None
+        self.displayLoadingMessage()
 
     def generateStatsReport(self):
         statsType = self.getSelectedStatsReports()
         cameras = self.getSelectedCameras()
         timePeriod = self.getDateRange()
         if timePeriod:
+            self.isPicReport = False
             msg = StatisticsRequest(timePeriod, statsType, cameras)
             self.sendToMainServer(msg)
-        self.reportVisualLabel.configure(text="", font=("Calibri", 16), image=None)
-        self.reportVisualLabel.image = None
+        self.displayLoadingMessage()
 
     def getSelectedCameras(self):
         cameras = []
@@ -280,16 +292,27 @@ class Client:
             self.picReportItems[listItemVal] = picLocation
             self.mylist.insert(END, listItemVal)
 
+    def displayLoadingMessage(self):
+        if self.reportVisualLabel.image != None:
+            self.reportVisualLabel.configure(text="Loading...", font=("Calibri", 16))
+            self.reportVisualLabel.image = None
+
+    def requestPicture(self, reportItem):
+        pictureLocation = self.picReportItems[reportItem]
+        self.sendToMainServer(GetPictureRequest(pictureLocation))
+        self.displayLoadingMessage()
+
     def selectedReportItem(self, evt):
         index = self.mylist.curselection()
         if not index:
             return
+
         reportItem = self.mylist.get(index)
-        pictureLocation = self.picReportItems[reportItem]
-        self.sendToMainServer(GetPictureRequest(pictureLocation))
-        if self.reportVisualLabel.image != None:
-            self.reportVisualLabel.configure(text="Loading...", font=("Calibri", 16))
-            self.reportVisualLabel.image = None
+        if self.isPicReport:
+            self.requestPicture(reportItem)
+        else:
+            self.displayStatisticsReport(reportItem)
+
         # envelope = Envelope(self.mainServerAddress, GetPictureRequest(pictureLocation))
         # #print envelope.message
         # self.comm.sendMessage(envelope)
@@ -301,7 +324,33 @@ class Client:
 
     def handleStatisticsReply(self, envelope):
         print "Received statistics reply"
-        print envelope.message.report
+        self.mylist.delete(0, END)
+        self.statsReport = envelope.message.report
+        for key in self.statsReport:
+            self.mylist.insert(END, key)
+        #print envelope.message.report :
+        #{'hourly': {'2017-12-07 08': 2}, 'daily': {'2017-12-07': 2}}
+        #
+        # if "hourly" in report:
+        #     print report
+
+    def displayStatisticsReport(self, item):
+        dictionary = self.statsReport[item]
+        times = []
+        amount = []
+        for key, val in dictionary.items():
+            times.append(key)
+            amount.append(int(val))
+
+        #plt.figure()
+        y_pos = np.arange(len(times))
+        plt.bar(y_pos, amount, align='center', alpha=0.5)
+        plt.xticks(y_pos, times)
+        plt.ylabel('Activity')
+        plt.savefig("./report.png")
+        plt.clf()
+        #plt.close()
+        self.loadImageFromFile()
 
 if __name__ == '__main__':
     root = Tk()
