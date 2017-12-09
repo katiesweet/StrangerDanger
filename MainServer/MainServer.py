@@ -25,7 +25,7 @@ class MainServer:
         self.shouldRun = True
         self.databaseFile = "PhotoDatabase.json"
         #self.registrationServerAddress = ("192.168.0.23", 50000)
-        self.registrationServerAddress = ("localhost", 52000)
+        self.registrationServerAddress = ("192.168.0.4", 52000)
         self.statisticsServerAddress = ("localhost", 52500)
         self.canStartSending = False
         self.sendRegisterRequest()
