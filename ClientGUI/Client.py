@@ -27,7 +27,9 @@ class Client:
         self.cameraSelection = {}
         self.statisticsOptions = {}
         self.picReportItems = {}
+        self.statsReportItems = {}
         self.canStartSending = False
+        self.isPicReport = True
         self.setupGui()
 
         self.sendRegisterRequest()
@@ -137,11 +139,13 @@ class Client:
         cameras = self.getSelectedCameras()
         mostRecent = True if reportType == 1 else False
         if mostRecent:
+            self.isPicReport = True
             msg = RawQueryRequest(mostRecent, DateRange("", ""), cameras)
             self.sendToMainServer(msg)
         else:
             timePeriod = self.getDateRange()
             if timePeriod:
+                self.isPicReport = True
                 msg = RawQueryRequest(mostRecent, timePeriod, cameras)
                 self.sendToMainServer(msg)
         self.reportVisualLabel.configure(text="", font=("Calibri", 16))
@@ -152,6 +156,7 @@ class Client:
         cameras = self.getSelectedCameras()
         timePeriod = self.getDateRange()
         if timePeriod:
+            self.isPicReport = False
             msg = StatisticsRequest(timePeriod, statsType, cameras)
             self.sendToMainServer(msg)
         self.reportVisualLabel.configure(text="", font=("Calibri", 16), image=None)
@@ -280,16 +285,25 @@ class Client:
             self.picReportItems[listItemVal] = picLocation
             self.mylist.insert(END, listItemVal)
 
-    def selectedReportItem(self, evt):
-        index = self.mylist.curselection()
-        if not index:
-            return
-        reportItem = self.mylist.get(index)
+
+    def requestPicture(self, reportItem):
         pictureLocation = self.picReportItems[reportItem]
         self.sendToMainServer(GetPictureRequest(pictureLocation))
         if self.reportVisualLabel.image != None:
             self.reportVisualLabel.configure(text="Loading...", font=("Calibri", 16))
             self.reportVisualLabel.image = None
+
+    def selectedReportItem(self, evt):
+        index = self.mylist.curselection()
+        if not index:
+            return
+
+        reportItem = self.mylist.get(index)
+        if self.isPicReport:
+            self.requestPicture(reportItem)
+        else:
+            self.displayStatisticsReport(reportItem)
+
         # envelope = Envelope(self.mainServerAddress, GetPictureRequest(pictureLocation))
         # #print envelope.message
         # self.comm.sendMessage(envelope)
@@ -301,7 +315,18 @@ class Client:
 
     def handleStatisticsReply(self, envelope):
         print "Received statistics reply"
-        print envelope.message.report
+        self.mylist.delete(0, END)
+        self.statsReport = envelope.message.report
+        for key in self.statsReport:
+            self.mylist.insert(END, key)
+        #print envelope.message.report :
+        #{'hourly': {'2017-12-07 08': 2}, 'daily': {'2017-12-07': 2}}
+        #
+        # if "hourly" in report:
+        #     print report
+
+    def displayStatisticsReport(self, item):
+        print self.statsReport
 
 if __name__ == '__main__':
     root = Tk()
