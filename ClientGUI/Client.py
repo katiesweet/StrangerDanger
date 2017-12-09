@@ -24,6 +24,7 @@ class Client:
     def __init__(self, master):
         logging.info("Creating client process")
         self.master = master
+        master.protocol("WM_DELETE_WINDOW", self.stopRunning)
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.registrationServerAddress = ("localhost" , 52000)
         #self.registrationServerAddress = ("192.168.0.23" , 50000)
@@ -39,6 +40,10 @@ class Client:
         self.sendRegisterRequest()
         self.sendServerListRequest()
         self.checkForMessagesPeriodically()
+
+    def stopRunning(self):
+        plt.close()
+        #self.master.destroy()
 
     def setupGui(self):
         self.master.title("Stranger Danger")
@@ -337,11 +342,14 @@ class Client:
             times.append(key)
             amount.append(int(val))
 
+        #plt.figure()
         y_pos = np.arange(len(times))
         plt.bar(y_pos, amount, align='center', alpha=0.5)
         plt.xticks(y_pos, times)
         plt.ylabel('Activity')
         plt.savefig("./report.png")
+        plt.clf()
+        #plt.close()
         self.loadImageFromFile()
 
 if __name__ == '__main__':
