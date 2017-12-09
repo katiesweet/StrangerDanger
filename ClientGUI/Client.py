@@ -24,8 +24,6 @@ class Client:
     def __init__(self, master):
         logging.info("Creating client process")
         self.master = master
-        self.running = True
-        # master.protocol("WM_DELETE_WINDOW", self.stopRunning)
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.registrationServerAddress = ("localhost" , 52000)
         #self.registrationServerAddress = ("192.168.0.23" , 50000)
@@ -41,11 +39,6 @@ class Client:
         self.sendRegisterRequest()
         self.sendServerListRequest()
         self.checkForMessagesPeriodically()
-
-        #self.sendServerListRequest()
-    # def stopRunning(self):
-    #     self.running = False
-    #     self.master.destroy()
 
     def setupGui(self):
         self.master.title("Stranger Danger")
@@ -233,10 +226,8 @@ class Client:
             haveMessage, envelope = self.comm.getMessage()
             if haveMessage:
                 self.processNewMessage(envelope)
-            if self.running:
-                self.master.after(50, self.checkForMessagesPeriodically)
+            self.master.after(50, self.checkForMessagesPeriodically)
         except:
-            "Exception"
             return
 
     def processNewMessage(self, envelope):
@@ -295,23 +286,6 @@ class Client:
             listItemVal = camName + ": " + timeStamp
             self.picReportItems[listItemVal] = picLocation
             self.mylist.insert(END, listItemVal)
-
-    def showFigure(self, figure):
-         # draw the renderer
-        fig.canvas.draw ( )
-
-        # Get the RGBA buffer from the figure
-        w,h = fig.canvas.get_width_height()
-        buf = np.fromstring ( fig.canvas.tostring_argb(), dtype=numpy.uint8 )
-        buf.shape = ( w, h,4 )
-
-        # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
-        buf = numpy.roll ( buf, 3, axis = 2 )
-        w, h, d = buf.shape
-        img= Image.fromstring( "RGBA", ( w ,h ), buf.tostring( ) )
-        self.reportVisualLabel.configure(image=img)
-        self.reportVisualLabel.image = img
-
 
     def displayLoadingMessage(self):
         if self.reportVisualLabel.image != None:
