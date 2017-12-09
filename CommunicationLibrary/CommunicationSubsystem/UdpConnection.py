@@ -1,10 +1,11 @@
 import socket
 import thread
 import logging
-#import sys
 from CommunicationLibrary.Messages.AbstractMessages import * # Message
+from CommunicationLibrary.Messages.ReplyMessages import *
+from CommunicationLibrary.Messages.RequestMessages import *
 from CommunicationLibrary.Messages.SharedObjects.Envelope import Envelope
-from Crypto.Cipher import AES
+from CommunicationLibrary.Messages.SharedObjects.KeyManager import KeyManager
 
 class UdpConnection:
     def __init__(self, outgoingMessageQueue, incomingMessageQueue, myEndpoint):
@@ -22,25 +23,27 @@ class UdpConnection:
         # Join thread?
 
     def encryptMessage(self, message):
-        # generate key for encryption based on the passphrase and Initialization Vector
-        key = AES.new('This is a key123', AES.MODE_CFB, 'This is an IV456')
-        return key.encrypt(message)
+        key = KeyManager.loadKey('RegistryPublicKey.pem')
+        return KeyManager.encryptMessage(key, message)
 
     def decryptMessage(self, message):
-        # generate key for decryption based on the passphrase and Initialization Vector
-        key = AES.new('This is a key123', AES.MODE_CFB, 'This is an IV456')
-        return key.decrypt(message)
+        key = KeyManager.loadKey('RegistryPrivateKey.pem')
+        return KeyManager.decryptMessage(key, message)
 
     def __sendMessage(self, udpSocket, envelope):
         try:
-            encodedMessage = envelope.message.encode()
-            encryptedMessage = self.encryptMessage(encodedMessage)
+            message = envelope.message.encode()
+            if isinstance(envelope.message, RegisterRequest):
+                logging.debug('Encrypting Register Request message')
+                print 'Encrypting Register Request Message'
+                message = self.encryptMessage(message)
+                message = 'encrypted{}'.format(message)
             #print "Sending message", envelope.message, " to ", \
             #    envelope.endpoint
             logging.debug("Sending message " + repr(envelope.message) \
                 + " to " + repr(envelope.endpoint))
             #print 'length of message is {}'.format(len(encodedMessage))
-            udpSocket.sendto(encryptedMessage, envelope.endpoint)
+            udpSocket.sendto(message, envelope.endpoint)
         except socket.error, msg:
             logging.error("Could not send message to server: {}".format(msg))
             #print socket.error, msg
@@ -49,8 +52,13 @@ class UdpConnection:
         try:
             data, addr = udpSocket.recvfrom(32768)
             if data:
-                decryptedData = self.decryptMessage(data)
-                message = Message.decode(decryptedData)
+                print 'got data {}'.format(type(data))
+                if (data[0:9] == 'encrypted'):
+                    logging.debug('Decrypting Register Request message')
+                    print 'Decrypting Register Request Message'
+                    data = self.decryptMessage(data[9:])
+                    print 'Decrypted message'
+                message = Message.decode(data)
                 #print "Received message: ", message, " from ", addr
                 logging.debug("Received message " + repr(message) + \
                     " from " + repr(addr))

@@ -75,6 +75,7 @@ class MainServer:
     def handleRegisterReply(self, envelope):
         processId = envelope.message.processId
         LocalProcessInfo.setProcessId(processId)
+        print 'Got ProcessID: {}'.format(processId)
         logging.info('Got ProcessID: {}'.format(processId))
         self.canStartSending = True
 

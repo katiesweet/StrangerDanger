@@ -12,6 +12,8 @@ from CommunicationLibrary.Messages.RequestMessages import *
 from CommunicationLibrary.Messages.SharedObjects import *
 from CommunicationLibrary.Messages.SharedObjects.LocalProcessInfo import LocalProcessInfo
 from CommunicationLibrary.Messages.SharedObjects.ProcessType import ProcessType
+from CommunicationLibrary.Messages.SharedObjects.KeyManager import KeyManager
+from CommunicationLibrary.Messages.SharedObjects.KeyGenerator import KeyGenerator
 from RegistryServer.Registry import Registry
 
 class TestMessages(unittest.TestCase):
@@ -1194,6 +1196,45 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(endpoint.host, '127.0.0.3')
         self.assertEqual(endpoint.port, '4000')
 
+    def testEncryptionDecryptionSmall(self):
+        key = KeyGenerator.generateKeyPair()
+        public_key = key.publickey()
+        testString = 'abc123asfasdfasdfasdfasdfasfasdfasdafasdfasdfasdfasdfas' \
+            'fasdfasdfasdfasdfasdfasdfasdfasdfasdfasdasdfasdfasdfasdfasdfasdf'
+        encryptedString = KeyManager.encryptMessage(public_key, testString)
+
+        decryptedString = KeyManager.decryptMessage(key, encryptedString)
+        self.assertEqual(testString, decryptedString)
+
+    def testEncryptionDecryptionLarge(self):
+        key = KeyGenerator.generateKeyPair()
+        public_key = key.publickey()
+        testString = 'ThisShouldBeTheBeginningfasfasdfasdafasdfasdfasdfasdfa2' \
+            '340192835102938123ishdaosinv.sknvl9w8rhqirqkj3r23rh98fhqd80s9d8v' \
+            '8d709nflknasldkjs8j4p9qnoaudc9a8whwfoaiwnlafkdhoa98csjelfaehfali' \
+            'licsuna8rj9p8qt9er8w0987t209348htoisgfdlvs8ernlonrlosnrvosirpet8' \
+            'ojv;oisre983ghweufvno3iurfn38jrmbv3oijnsvdriuvlsdirvn;soitvnslkd' \
+            'lijrnwivuhrfpwierpowiefvl;kn;oeibsesirogj;eroisje;slknfdlkdfjgs;' \
+            ';osidrj;osidrj;sdifvs;oidrn;idj;ois;fn;oidjgs;dlrgndflknd;lfkdfa' \
+            'sdfasdfasdfasdfasdfasdfasdfasdfasdasdfasdfasdfasdfasdfaaasdfasdf' \
+            'fasdfasdfasdfasdfsdfasdfasdfThisShouldBeTheEnd'
+        encryptedString = KeyManager.encryptMessage(public_key, testString)
+
+        decryptedString = KeyManager.decryptMessage(key, encryptedString)
+        self.assertEqual(testString, decryptedString)
+
+    def testEncryptionDecryptionRegister(self):
+        key = KeyManager.loadKey('RegistryPrivateKey.pem')
+        public_key = KeyManager.loadKey('RegistryPublicKey.pem')
+        msg = RegisterRequest(ProcessType.MainServer)
+        encodedMsg = msg.encode()
+        encryptedMsg = KeyManager.encryptMessage(public_key, encodedMsg)
+        encryptedMsg = 'encrypted{}'.format(encryptedMsg)
+        self.assertEqual(encryptedMsg[0:9], 'encrypted')
+        decryptedMsg = KeyManager.decryptMessage(key, encryptedMsg[9:])
+        self.assertEqual(decryptedMsg, encodedMsg)
+        decodedMsg = Message.decode(decryptedMsg)
+        self.assertEqual(msg.processType, decodedMsg.processType)
 
 
 if __name__ == '__main__':
