@@ -53,14 +53,14 @@ class MainServer:
             newTime = datetime.datetime.now()
 
             # if we haven't pinged in over an hour
-            if newTime > previousPingTime + datetime.timedelta(seconds=60):
+            if newTime > previousPingTime + datetime.timedelta(seconds=3600):
             #if newTime > previousPingTime + datetime.timedelta(seconds=60):
                 previousPingTime = newTime
                 self.__startSyncProtocol()
 
             # Sleep for a minute
-            #time.sleep(60)
-            time.sleep(5)
+            time.sleep(60)
+            #time.sleep(5)
 
     def __startSyncProtocol(self):
         # Request list of other main servers from registry
