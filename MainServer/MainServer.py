@@ -107,21 +107,24 @@ class MainServer:
         self.getPictureFromQueue()
 
     def getPictureFromQueue(self):
+        print "Getting picture"
         if not self.picturesNeededToGet.empty():
             try:
                 endpoint, self.currentRequestedPicture = self.picturesNeededToGet.get(False)
             except:
                 return
             picLocation = self.currentRequestedPicture["picLocation"]
+            print "at location ", picLocation
             envelope = Envelope(endpoint, GetPictureRequest(picLocation))
             self.comm.sendMessage(envelope)
 
     def handleGetPictureReply(self, envelope):
+        print "Received picture!"
         picInfo = self.currentRequestedPicture
         picture = envelope.message.picture
-
+        print "Received picture ", picInfo
         # Save picture
-        scipy.misc.imsave(photoStorageLocation, picture)
+        scipy.misc.imsave(picInfo["picLocation"], picture)
         self.writeDatabaseEntry(picInfo["camName"], picInfo["timeStamp"], picInfo["picLocation"])
 
         # Request next picture
