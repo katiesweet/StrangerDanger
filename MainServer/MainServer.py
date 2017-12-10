@@ -25,8 +25,9 @@ class MainServer:
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.shouldRun = True
         self.databaseFile = "PhotoDatabase.json"
-        #self.registrationServerAddress = ("192.168.0.23", 50000)
-        self.registrationServerAddress = ("localhost", 52000)
+        self.registrationServerAddress = ("52.32.224.253", 52000)
+        #self.registrationServerAddress = ("192.168.0.16", 52000)
+        #self.registrationServerAddress = ("localhost", 52000)
         self.statisticsServerAddress = ("localhost", 52500)
         self.otherMainServers = []
         self.canStartSending = False
@@ -53,14 +54,14 @@ class MainServer:
             newTime = datetime.datetime.now()
 
             # if we haven't pinged in over an hour
-            if newTime > previousPingTime + datetime.timedelta(seconds=3600):
-            #if newTime > previousPingTime + datetime.timedelta(seconds=10):
+            #if newTime > previousPingTime + datetime.timedelta(seconds=3600):
+            if newTime > previousPingTime + datetime.timedelta(seconds=60):
                 previousPingTime = newTime
                 self.__startSyncProtocol()
 
             # Sleep for a minute
-            time.sleep(60)
-            #time.sleep(5)
+            #time.sleep(60)
+            time.sleep(5)
 
     def __startSyncProtocol(self):
         print "Starting sync"
@@ -113,7 +114,7 @@ class MainServer:
                 return
             picLocation = self.currentRequestedPicture["picLocation"]
             envelope = Envelope(endpoint, GetPictureRequest(picLocation))
-            self.comm.send(envelope)
+            self.comm.sendMessage(envelope)
 
     def handleGetPictureReply(self, envelope):
         picInfo = self.currentRequestedPicture
