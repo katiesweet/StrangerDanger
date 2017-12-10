@@ -74,7 +74,7 @@ class UdpConnection:
             udpSocket.sendto(message, envelope.endpoint)
         except socket.error, msg:
             logging.error("Could not send message to server: {}".format(msg))
-            #print socket.error, msg
+            print socket.error, msg
 
     def __receiveMessage(self, udpSocket):
         try:

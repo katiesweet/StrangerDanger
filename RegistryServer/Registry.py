@@ -80,12 +80,15 @@ class Registry:
         with self.communicationsLock:
             self.comm.sendMessage(outEnv)
 
-    def __getArrayOfMainServers(self):
+    def __getArrayOfMainServers(self, requestEndpoint):
         with self.mainServerLock:
             knownServers = copy.deepcopy(self.knownMainServers)
 
         arrayServers = []
         for endpoint in knownServers:
+            print endpoint
+            if endpoint == requestEndpoint:
+                continue
             if knownServers[endpoint] == True:
                 arrayServers.append(endpoint)
         return arrayServers
@@ -97,7 +100,7 @@ class Registry:
             self.__handleCameraListRequest(envelope)
 
     def __handleMainServerRequest(self, envelope):
-        knownMainServers = self.__getArrayOfMainServers()
+        knownMainServers = self.__getArrayOfMainServers(envelope.endpoint)
         responseMessage = ServerListReply(True, ProcessType.MainServer, knownMainServers)
         responseMessage.setConversationId(envelope.message.conversationId)
         outEnv = Envelope(envelope.endpoint, responseMessage)
@@ -121,8 +124,8 @@ class Registry:
         previousPingTime = datetime.datetime.now()
         while self.shouldRun:
             newTime = datetime.datetime.now()
-            # if we haven't pinged in over 10 minutes
-            if newTime > previousPingTime + datetime.timedelta(seconds=10):
+            # if we haven't pinged in over 10 seconds
+            if newTime > previousPingTime + datetime.timedelta(seconds=60):
                 previousPingTime = newTime
                 self.__pingMainServers()
 
