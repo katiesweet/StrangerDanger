@@ -111,6 +111,7 @@ class MainServer:
         if not self.picturesNeededToGet.empty():
             try:
                 endpoint, self.currentRequestedPicture = self.picturesNeededToGet.get(False)
+                print "from endpoint", endpoint
             except:
                 return
             picLocation = self.currentRequestedPicture["picLocation"]
@@ -244,11 +245,14 @@ class MainServer:
 
     def handleGetPictureRequest(self, envelope):
         picLocation = envelope.message.picLocation
-
+        print "Got request for picture at location ", picLocation
         img = cv2.imread(picLocation, 0)
+        # if not img:
+        #     print "Image doesn't exist"
         msg = GetPictureReply(True, img)
         msg.setConversationId(envelope.message.conversationId)
         self.comm.sendMessage(Envelope(envelope.endpoint, msg))
+        print "Sending picture back"
 
     def getDataForCameras(self, validCams):
         with open(self.databaseFile, "r") as database:
