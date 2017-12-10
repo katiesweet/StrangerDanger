@@ -42,8 +42,10 @@ class Client:
         self.checkForMessagesPeriodically()
 
     def stopRunning(self):
-        plt.close()
-        #self.master.destroy()
+        if plt.get_fignums():
+            plt.close()
+        else:
+            self.master.destroy()
 
     def setupGui(self):
         self.master.title("Stranger Danger")
