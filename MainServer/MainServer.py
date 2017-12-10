@@ -25,7 +25,7 @@ class MainServer:
         self.comm = CommunicationSubsystem.CommunicationSubsystem()
         self.shouldRun = True
         self.databaseFile = "PhotoDatabase.json"
-        self.registrationServerAddress = ("52.32.224.253", 52000)
+        self.registrationServerAddress = ("54.71.0.209", 52000)
         #self.registrationServerAddress = ("192.168.0.16", 52000)
         #self.registrationServerAddress = ("localhost", 52000)
         self.statisticsServerAddress = ("localhost", 52500)
@@ -59,20 +59,17 @@ class MainServer:
                 self.__startSyncProtocol()
 
             # Sleep for a minute
-            time.sleep(60)
-            #time.sleep(5)
+            #time.sleep(60)
+            time.sleep(5)
 
     def __startSyncProtocol(self):
-        print "Starting sync"
         # Request list of other main servers from registry
         envelope = Envelope(self.registrationServerAddress, ServerListRequest(ProcessType.MainServer))
         logging.debug("Requesting other main servers")
         self.comm.sendMessage(envelope)
 
     def handleServerListReply(self, envelope):
-        print "Got server list reply with servers ",
         mainServers = envelope.message.servers
-        print mainServers
         with open(self.databaseFile, "r") as database:
             data = json.load(database)
 
@@ -82,7 +79,6 @@ class MainServer:
             self.comm.sendMessage(envelope)
 
     def handleSyncDataRequest(self, envelope):
-        print "Received sync request"
         theirData = envelope.message.data["pictures"]
 
         # Respond to them
@@ -108,23 +104,18 @@ class MainServer:
         self.getPictureFromQueue()
 
     def getPictureFromQueue(self):
-        print "Requesting picture ",
         if not self.picturesNeededToGet.empty():
             try:
                 endpoint, self.currentRequestedPicture = self.picturesNeededToGet.get(False)
-                print "from endpoint", endpoint
             except:
                 return
             picLocation = self.currentRequestedPicture["picLocation"]
-            print "at location ", picLocation
             envelope = Envelope(endpoint, GetPictureRequest(picLocation))
             self.comm.sendMessage(envelope)
 
     def handleGetPictureReply(self, envelope):
-        print "Received picture!"
         picInfo = self.currentRequestedPicture
         picture = envelope.message.picture
-        print "Received picture ", picInfo
         # Save picture
         scipy.misc.imsave(picInfo["picLocation"], picture)
         self.writeDatabaseEntry(picInfo["camName"], picInfo["timeStamp"], picInfo["picLocation"])
@@ -167,7 +158,7 @@ class MainServer:
             self.handleServerListReply(envelope)
         elif isinstance(envelope.message, SyncDataRequest):
             self.handleSyncDataRequest(envelope)
-        elif isinstance(envelope, GetPictureReply):
+        elif isinstance(envelope.message, GetPictureReply):
             self.handleGetPictureReply(envelope)
 
     def handleRegisterReply(self, envelope):
@@ -246,14 +237,10 @@ class MainServer:
 
     def handleGetPictureRequest(self, envelope):
         picLocation = envelope.message.picLocation
-        print "Got request for picture at location ", picLocation
         img = cv2.imread(picLocation, 0)
-        # if not img:
-        #     print "Image doesn't exist"
         msg = GetPictureReply(True, img)
         msg.setConversationId(envelope.message.conversationId)
         self.comm.sendMessage(Envelope(envelope.endpoint, msg))
-        print "Sending picture back"
 
     def getDataForCameras(self, validCams):
         with open(self.databaseFile, "r") as database:
