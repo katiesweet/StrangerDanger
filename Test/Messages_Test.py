@@ -1238,8 +1238,8 @@ class TestMessages(unittest.TestCase):
         self.assertEqual(testString, decryptedString)
 
     def testEncryptionDecryptionRegisterRequest(self):
-        key = KeyManager.loadKey('RegistryPrivateKey.pem')
-        public_key = KeyManager.loadKey('RegistryPublicKey.pem')
+        key = KeyGenerator.generateKeyPair()
+        public_key = key.publickey()
         process_key = KeyGenerator.generateKeyPair()
         process_public_key = process_key.publickey()
         msg = RegisterRequest(ProcessType.MainServer, key=process_public_key)
@@ -1268,8 +1268,8 @@ class TestMessages(unittest.TestCase):
 
     def testEncryptionDecryptionRegisterRequestReply(self):
         # request
-        key = KeyManager.loadKey('RegistryPrivateKey.pem')
-        public_key = KeyManager.loadKey('RegistryPublicKey.pem')
+        key = KeyGenerator.generateKeyPair()
+        public_key = key.publickey()
         msg = RegisterRequest(ProcessType.MainServer)
         process_key = KeyGenerator.generateKeyPair()
         process_public_key = process_key.publickey()
