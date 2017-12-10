@@ -86,6 +86,7 @@ class Registry:
 
         arrayServers = []
         for endpoint in knownServers:
+            print endpoint
             if endpoint == requestEndpoint:
                 continue
             if knownServers[endpoint] == True:
@@ -124,7 +125,7 @@ class Registry:
         while self.shouldRun:
             newTime = datetime.datetime.now()
             # if we haven't pinged in over 10 seconds
-            if newTime > previousPingTime + datetime.timedelta(seconds=10):
+            if newTime > previousPingTime + datetime.timedelta(seconds=60):
                 previousPingTime = newTime
                 self.__pingMainServers()
 

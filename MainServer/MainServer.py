@@ -29,7 +29,6 @@ class MainServer:
         #self.registrationServerAddress = ("192.168.0.16", 52000)
         #self.registrationServerAddress = ("localhost", 52000)
         self.statisticsServerAddress = ("localhost", 52500)
-        self.otherMainServers = []
         self.canStartSending = False
         self.sendRegisterRequest()
         self.picturesNeededToGet = Queue.Queue()
@@ -54,14 +53,14 @@ class MainServer:
             newTime = datetime.datetime.now()
 
             # if we haven't pinged in over an hour
-            #if newTime > previousPingTime + datetime.timedelta(seconds=3600):
             if newTime > previousPingTime + datetime.timedelta(seconds=60):
+            #if newTime > previousPingTime + datetime.timedelta(seconds=60):
                 previousPingTime = newTime
                 self.__startSyncProtocol()
 
             # Sleep for a minute
-            #time.sleep(60)
-            time.sleep(5)
+            time.sleep(60)
+            #time.sleep(5)
 
     def __startSyncProtocol(self):
         print "Starting sync"
@@ -71,8 +70,9 @@ class MainServer:
         self.comm.sendMessage(envelope)
 
     def handleServerListReply(self, envelope):
-        print "Got server list reply!"
+        print "Got server list reply with servers ",
         mainServers = envelope.message.servers
+        print mainServers
         with open(self.databaseFile, "r") as database:
             data = json.load(database)
 
@@ -82,6 +82,7 @@ class MainServer:
             self.comm.sendMessage(envelope)
 
     def handleSyncDataRequest(self, envelope):
+        print "Received sync request"
         theirData = envelope.message.data["pictures"]
 
         # Respond to them
@@ -107,7 +108,7 @@ class MainServer:
         self.getPictureFromQueue()
 
     def getPictureFromQueue(self):
-        print "Getting picture"
+        print "Requesting picture ",
         if not self.picturesNeededToGet.empty():
             try:
                 endpoint, self.currentRequestedPicture = self.picturesNeededToGet.get(False)
