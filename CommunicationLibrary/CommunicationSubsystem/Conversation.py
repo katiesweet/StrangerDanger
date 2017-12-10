@@ -102,7 +102,7 @@ class BaseConversation(object):
 
     def checkReceived(self):
         while self.waiting:
-            time.sleep(20)
+            time.sleep(8)
             if self.waiting:
                 self.missed_waits += 1
                 logging.debug("missed message")
